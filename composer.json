@@ -1,0 +1,22 @@
+{
+    "name": "crysalead/storage-stream",
+    "description": "Object-Oriented API for PHP streams",
+    "keywords": ["Stream"],
+    "license": "MIT",
+    "require": {
+        "php": ">=5.4"
+    },
+    "require-dev": {
+        "crysalead/kahlan": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "storage\\stream\\": "src/",
+            "storage\\stream\\spec\\": "spec/"
+        }
+    },
+    "config": {
+        "bin-dir": "bin"
+    },
+    "minimum-stability": "dev"
+}
