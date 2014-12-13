@@ -190,11 +190,7 @@ class Stream
             $length = $this->_bufferSize;
         }
         $result = fread($this->_resource, $length);
-        if ($result === false) {
-            throw new StreamException('Cannot read stream');
-        }
-
-        return $result !== '' ? $result : false;
+        return $result === false ? '' : $result;
     }
 
     /**
@@ -211,7 +207,7 @@ class Stream
             $length = $this->_bufferSize;
         }
         $result = stream_get_line($this->_resource, $length, $ending);
-        return $result !== '' ? $result : false;
+        return $result === false ? '' : $result;
     }
 
     /**

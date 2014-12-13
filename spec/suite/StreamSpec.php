@@ -222,20 +222,6 @@ describe("Stream", function() {
             expect($closure)->toThrow(new StreamException("~Cannot read on a non-readable stream~"));
         });
 
-        it("throws an exception if an error occured", function() {
-
-            Monkey::patch('fread', function() {
-                return false;
-            });
-
-            $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
-                $stream->read();
-            };
-
-            expect($closure)->toThrow(new StreamException('Cannot read stream'));
-        });
-
         it("reads data from the stream", function() {
 
             $handle = fopen('php://temp', 'r+');
@@ -290,7 +276,7 @@ describe("Stream", function() {
             rewind($handle);
             $stream = new Stream($handle);
             expect($stream->read(3))->toBe('foo');
-            expect($stream->read())->toBe(false);
+            expect($stream->read())->toBe('');
             expect($stream->valid())->toBe(true);
 
         });
@@ -395,7 +381,7 @@ describe("Stream", function() {
             rewind($handle);
             $stream = new Stream($handle);
             expect($stream->getLine(3))->toBe('foo');
-            expect($stream->getLine())->toBe(false);
+            expect($stream->getLine())->toBe('');
             expect($stream->valid())->toBe(true);
 
         });
