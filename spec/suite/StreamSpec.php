@@ -490,7 +490,7 @@ describe("Stream", function() {
 
     });
 
-    describe("->content()", function() {
+    describe("->flush()", function() {
 
         it("reads the remaining data from the stream.", function() {
 
@@ -499,7 +499,8 @@ describe("Stream", function() {
             rewind($handle);
             $stream = new Stream($handle);
             $stream->bufferSize(1);
-            expect($stream->content())->toBe('foobar');
+            expect($stream->read(3))->toBe('foo');
+            expect($stream->flush())->toBe('bar');
             expect($stream->valid())->toBe(true);
 
         });

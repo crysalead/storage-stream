@@ -219,7 +219,7 @@ class Stream
      *
      * @return string The readed content.
      */
-    public function content()
+    public function flush()
     {
         $this->_readable();
         return stream_get_contents($this->_resource);
