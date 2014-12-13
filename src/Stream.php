@@ -30,6 +30,13 @@ class Stream
         ];
         $config += $defaults;
 
+        if (is_string($resource)) {
+            $stream = fopen('php://temp', 'r+');
+            fwrite($stream, $resource);
+            rewind($stream);
+            $resource = $stream;
+        }
+
         $this->_resource = $resource;
         $this->_bufferSize = $config['bufferSize'];
     }
@@ -42,7 +49,7 @@ class Stream
     public function resource()
     {
         if (!is_resource($this->_resource)) {
-            throw new StreamException('A Stream object requires a stream resource as constructor argument');
+            throw new StreamException('Invalid resource');
         }
         return $this->_resource;
     }

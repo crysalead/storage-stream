@@ -27,16 +27,29 @@ describe("Stream", function() {
         Dir::remove($this->temp, ['recursive' => true]);
     });
 
+    describe("->__construct()", function() {
+
+        it("casts string as stream", function() {
+
+            $stream = new Stream('HelloWorld');
+            expect($stream->read(5))->toBe('Hello');
+            expect($stream->read(5))->toBe('World');
+            expect($stream->valid())->toBe(true);
+            expect($stream->eof())->toBe(true);
+        });
+
+    });
+
     describe("->resource()", function() {
 
         it("throws an exception if the passed resource is not a valid resource", function() {
 
             $closure = function() {
-                $stream = new Stream('not a resource');
+                $stream = new Stream([]);
                 $stream->resource();
             };
 
-            expect($closure)->toThrow(new StreamException('A Stream object requires a stream resource as constructor argument'));
+            expect($closure)->toThrow(new StreamException('Invalid resource'));
 
         });
 
