@@ -33,7 +33,7 @@ describe("Stream", function() {
 
             $stream = new Stream('HelloWorld');
             expect($stream->read(5))->toBe('Hello');
-            expect($stream->read(5))->toBe('World');
+            expect($stream->read())->toBe('World');
             expect($stream->valid())->toBe(true);
             expect($stream->eof())->toBe(true);
         });
@@ -72,7 +72,8 @@ describe("Stream", function() {
             expect($meta['uri'])->toBe('php://temp');
             expect($meta['wrapper_type'])->toBe('PHP');
             expect($meta['stream_type'])->toBe('TEMP');
-            expect($meta['mode'])->toBe('w+b');
+            expect($stream->readable())->toBe(true);
+            expect($stream->writable())->toBe(true);
             expect($meta['unread_bytes'])->toBe(0);
             expect($meta['seekable'])->toBe(true);
         });
