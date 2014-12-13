@@ -211,9 +211,9 @@ class Stream
     }
 
     /**
-     * Reads the remaining data from the stream.
+     * Returns the remaining data from the stream.
      *
-     * @return string The readed content.
+     * @return string
      */
     public function flush()
     {
@@ -309,6 +309,15 @@ class Stream
             $this->_resource = null;
         }
         return $result;
+    }
+
+    /**
+     * Returns the remaining data from the stream.
+     *
+     * @return string
+     */
+    public function __toString() {
+        return $this->flush();
     }
 
     /**

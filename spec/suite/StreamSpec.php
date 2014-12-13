@@ -564,7 +564,7 @@ describe("Stream", function() {
 
     });
 
-    describe("close()", function() {
+    describe("->close()", function() {
 
         it("closes the stream", function() {
 
@@ -572,6 +572,21 @@ describe("Stream", function() {
             expect($stream->close())->toBe(true);
             expect($stream->valid())->toBe(false);
             expect($stream->close())->toBe(false);
+
+        });
+
+    });
+
+    describe("->__toString()", function() {
+
+        it("reads the remaining data from the stream.", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            $stream->bufferSize(1);
+            expect((string) $stream)->toBe('foobar');
 
         });
 
