@@ -173,21 +173,6 @@ describe("Stream", function() {
 
     });
 
-    describe("->valid()", function() {
-
-        it("returns `true` if the stream is valid", function() {
-            $stream = new Stream(fopen('php://output', 'r'));
-            expect($stream->valid())->toBe(true);
-        });
-
-        it("returns `true` if the stream is not valid", function() {
-            $stream = new Stream(fopen('php://output', 'r'));
-            $stream->close();
-            expect($stream->valid())->toBe(false);
-        });
-
-    });
-
     describe("->bufferSize()", function() {
 
         it("changes the buffer size to 4096 by default", function() {
@@ -389,111 +374,6 @@ describe("Stream", function() {
 
     });
 
-    describe("->seek()", function() {
-
-        it("throws an exception if the stream is invalid", function() {
-
-            $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
-                $stream->close();
-                $stream->seek(3);
-            };
-
-            expect($closure)->toThrow(new StreamException('Cannot seek on a closed stream'));
-        });
-
-        it("throws an exception if the stream is invalid", function() {
-
-            $closure = function() {
-                $stream = new Stream(fopen('php://output', 'r'));
-                $stream->seek(3);
-            };
-
-            expect($closure)->toThrow(new StreamException('Cannot seek on a non-seekable stream'));
-        });
-
-        it("seeks to a specified position", function() {
-
-            $handle = fopen('file://' . $this->filename, 'w+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream($handle);
-            $stream->seek(3);
-            expect($stream->read(3))->toBe('bar');
-            expect($stream->valid())->toBe(true);
-
-        });
-
-    });
-
-    describe("->offset()", function() {
-
-        it("seeks to a specified position", function() {
-
-            $handle = fopen('file://' . $this->filename, 'w+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream($handle);
-            $stream->seek(3);
-            expect($stream->offset())->toBe(3);
-
-        });
-
-    });
-
-    describe("->eof()", function() {
-
-        it("throws an exception if the stream is invalid", function() {
-
-            $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
-                $stream->close();
-                $stream->eof();
-            };
-
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream'));
-        });
-
-        it("returns `false` if the end of the stream has not been reached", function() {
-
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream($handle);
-            expect($stream->eof())->toBe(false);
-
-        });
-
-        it("returns `true` if the end of the stream has been reached", function() {
-
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream($handle);
-            $stream->read();
-            expect($stream->eof())->toBe(true);
-
-        });
-
-    });
-
-    describe("->flush()", function() {
-
-        it("reads the remaining data from the stream.", function() {
-
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream($handle);
-            $stream->bufferSize(1);
-            expect($stream->read(3))->toBe('foo');
-            expect($stream->flush())->toBe('bar');
-            expect($stream->valid())->toBe(true);
-
-        });
-
-    });
-
     describe("->write()", function() {
 
         it("throws an exception if the stream is invalid", function() {
@@ -565,14 +445,122 @@ describe("Stream", function() {
 
     });
 
-    describe("->close()", function() {
+    describe("->flush()", function() {
 
-        it("closes the stream", function() {
+        it("reads the remaining data from the stream", function() {
 
-            $stream = new Stream(fopen('php://temp', 'r+'));
-            expect($stream->close())->toBe(true);
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            $stream->bufferSize(1);
+            expect($stream->read(3))->toBe('foo');
+            expect($stream->flush())->toBe('bar');
+            expect($stream->valid())->toBe(true);
+
+        });
+
+    });
+
+    describe("->seek()", function() {
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream->close();
+                $stream->seek(3);
+            };
+
+            expect($closure)->toThrow(new StreamException('Cannot seek on a closed stream'));
+        });
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream(fopen('php://output', 'r'));
+                $stream->seek(3);
+            };
+
+            expect($closure)->toThrow(new StreamException('Cannot seek on a non-seekable stream'));
+        });
+
+        it("seeks to a specified position", function() {
+
+            $handle = fopen('file://' . $this->filename, 'w+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            $stream->seek(3);
+            expect($stream->read(3))->toBe('bar');
+            expect($stream->valid())->toBe(true);
+
+        });
+
+    });
+
+    describe("->offset()", function() {
+
+        it("seeks to a specified position", function() {
+
+            $handle = fopen('file://' . $this->filename, 'w+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            $stream->seek(3);
+            expect($stream->offset())->toBe(3);
+
+        });
+
+    });
+
+    describe("->valid()", function() {
+
+        it("returns `true` if the stream is valid", function() {
+            $stream = new Stream(fopen('php://output', 'r'));
+            expect($stream->valid())->toBe(true);
+        });
+
+        it("returns `true` if the stream is not valid", function() {
+            $stream = new Stream(fopen('php://output', 'r'));
+            $stream->close();
             expect($stream->valid())->toBe(false);
-            expect($stream->close())->toBe(false);
+        });
+
+    });
+
+
+    describe("->eof()", function() {
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream->close();
+                $stream->eof();
+            };
+
+            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream'));
+        });
+
+        it("returns `false` if the end of the stream has not been reached", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            expect($stream->eof())->toBe(false);
+
+        });
+
+        it("returns `true` if the end of the stream has been reached", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream($handle);
+            $stream->read();
+            expect($stream->eof())->toBe(true);
 
         });
 
@@ -588,6 +576,19 @@ describe("Stream", function() {
             $stream = new Stream($handle);
             $stream->bufferSize(1);
             expect((string) $stream)->toBe('foobar');
+
+        });
+
+    });
+
+    describe("->close()", function() {
+
+        it("closes the stream", function() {
+
+            $stream = new Stream(fopen('php://temp', 'r+'));
+            expect($stream->close())->toBe(true);
+            expect($stream->valid())->toBe(false);
+            expect($stream->close())->toBe(false);
 
         });
 

@@ -155,14 +155,6 @@ class Stream
     }
 
     /**
-     * @return Boolean
-     */
-    public function valid()
-    {
-        return !!$this->_resource;
-    }
-
-    /**
      * Gets/sets the buffer size.
      *
      * @param  integer $bufferSize The buffer size to set or `null` to get the current buffer size.
@@ -211,28 +203,6 @@ class Stream
     }
 
     /**
-     * Returns the remaining data from the stream.
-     *
-     * @return string
-     */
-    public function flush()
-    {
-        $this->_readable();
-        return stream_get_contents($this->_resource);
-    }
-
-    /**
-     * Checks for EOF.
-     *
-     * @return boolean
-     */
-    public function eof()
-    {
-        $this->_readable();
-        return feof($this->_resource);
-    }
-
-    /**
      * Writes data to the stream.
      *
      * @param  string  $string The string that is to be written.
@@ -260,6 +230,17 @@ class Stream
     public function pipe($stream)
     {
         return stream_copy_to_stream($this->resource(), $stream->resource());
+    }
+
+    /**
+     * Returns the remaining data from the stream.
+     *
+     * @return string
+     */
+    public function flush()
+    {
+        $this->_readable();
+        return stream_get_contents($this->_resource);
     }
 
     /**
@@ -298,6 +279,34 @@ class Stream
     }
 
     /**
+     * @return Boolean
+     */
+    public function valid()
+    {
+        return !!$this->_resource;
+    }
+
+    /**
+     * Checks for EOF.
+     *
+     * @return boolean
+     */
+    public function eof()
+    {
+        $this->_readable();
+        return feof($this->_resource);
+    }
+
+    /**
+     * Returns the remaining data from the stream (same as flush).
+     *
+     * @return string
+     */
+    public function __toString() {
+        return $this->flush();
+    }
+
+    /**
      * Closes the stream
      */
     public function close()
@@ -309,15 +318,6 @@ class Stream
             $this->_resource = null;
         }
         return $result;
-    }
-
-    /**
-     * Returns the remaining data from the stream.
-     *
-     * @return string
-     */
-    public function __toString() {
-        return $this->flush();
     }
 
     /**
