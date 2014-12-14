@@ -48,7 +48,7 @@ class Stream
      */
     public function resource()
     {
-        if (!is_resource($this->_resource)) {
+        if (!$this->valid()) {
             throw new StreamException('Invalid resource');
         }
         return $this->_resource;
