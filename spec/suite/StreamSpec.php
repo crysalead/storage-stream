@@ -317,6 +317,20 @@ describe("Stream", function() {
 
         });
 
+        it("checks buffer size is equal to 4096 by default", function() {
+
+            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            expect(strlen($stream->read()))->toBe(4096);
+
+        });
+
+        it("can reads more than the buffer size limit when explicitly defined", function() {
+
+            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            expect(strlen($stream->read(8192)))->toBe(8192);
+
+        });
+
         it("reads only a specified number of character", function() {
 
             $handle = fopen('php://temp', 'r+');
