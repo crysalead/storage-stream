@@ -21,10 +21,12 @@ describe("Stream", function() {
     beforeEach(function() {
         $this->temp = Dir::tempnam(sys_get_temp_dir(), 'spec');
         $this->filename = tempnam($this->temp, 'foo');
+        stream_wrapper_register('lorem', 'storage\stream\spec\mock\LoremWrapper');
     });
 
     afterEach(function() {
         Dir::remove($this->temp, ['recursive' => true]);
+        stream_wrapper_unregister('lorem');
     });
 
     describe("->__construct()", function() {
@@ -457,6 +459,28 @@ describe("Stream", function() {
             expect($stream->read(3))->toBe('foo');
             expect($stream->flush())->toBe('bar');
             expect($stream->valid())->toBe(true);
+
+        });
+
+    });
+
+    describe("->timeout()", function() {
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream([]);
+                $stream->timeout(5000);
+            };
+
+            expect($closure)->toThrow(new StreamException('Invalid stream resource, unable to set a timeout on it'));
+        });
+
+        it("sets a timeout", function() {
+
+            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            $stream->timeout(5000);
+            expect($stream->timeout())->toBe(5000);
 
         });
 

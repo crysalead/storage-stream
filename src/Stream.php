@@ -18,6 +18,13 @@ class Stream
     protected $_bufferSize = 4096;
 
     /**
+     * The timeout in microseconds
+     *
+     * @var integer
+     */
+    protected $_timeout = -1;
+
+    /**
      * The constructor
      *
      * @param resource $resource The stream resource.
@@ -241,6 +248,22 @@ class Stream
     {
         $this->_readable();
         return stream_get_contents($this->_resource);
+    }
+
+    /**
+     * Set timeout period on a stream.
+     *
+     * @param integer $delay The timeout delay in microseconds.
+     */
+    public function timeout($delay = null) {
+        if ($delay === null) {
+            return $this->_timeout;
+        }
+        if (!$this->valid()) {
+            throw new StreamException("Invalid stream resource, unable to set a timeout on it");
+        }
+        $this->_timeout = $delay;
+        return stream_set_timeout($this->_resource, 0, $delay);
     }
 
     /**
