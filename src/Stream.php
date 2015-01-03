@@ -34,16 +34,21 @@ class Stream
     /**
      * The constructor
      *
-     * @param resource $resource The stream resource.
-     * @param array    $config   The configuration array.
+     * @param array $config The configuration array. Possibles values are:
+     *                      -`resource` _resource_: a resource.
+     *                      -`file`     _string_  : a file path.
+     *                      -`mode`     _string_  : the mode parameter (used with `file` only).
+     *                      -`data`     _string_  : a data string.
+     *                      -`mime`     _mixed_   : a mime string or `true` for an auto detection.
+     *                      `resource`, `file` & `data` are mutually exclusive.
      */
     public function __construct($config = [])
     {
         $defaults = [
             'resource'   => null,
             'file'       => null,
-            'string'     => '',
             'mode'       => 'r+',
+            'data'       => '',
             'bufferSize' => 4096,
             'mime'       => null
         ];
@@ -55,8 +60,8 @@ class Stream
             $resource = fopen($config['file'], $config['mode']);
         } else {
             $stream = fopen('php://temp', 'r+');
-            if ($config['string']) {
-                fwrite($stream, $config['string']);
+            if ($config['data']) {
+                fwrite($stream, $config['data']);
                 rewind($stream);
             }
             $resource = $stream;

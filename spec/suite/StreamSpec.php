@@ -31,9 +31,9 @@ describe("Stream", function() {
 
     describe("->__construct()", function() {
 
-        it("creates a string stream", function() {
+        it("creates a stream from a string", function() {
 
-            $stream = new Stream(['string' => 'HelloWorld']);
+            $stream = new Stream(['data' => 'HelloWorld']);
             expect($stream->read(5))->toBe('Hello');
             expect($stream->read())->toBe('World');
             expect($stream->valid())->toBe(true);
@@ -726,10 +726,20 @@ describe("Stream", function() {
         it("returns the plain text mime with a simple string", function() {
 
             $stream = new Stream([
-                'string' => 'HelloWorld',
-                'mime'   => true
+                'data' => 'HelloWorld',
+                'mime' => true
             ]);
             expect($stream->mime())->toBe('text/plain');
+
+        });
+
+        it("keeps the stream position inchanged even with mime autodetection enabled", function() {
+
+            $stream = new Stream([
+                'data' => 'HelloWorld',
+                'mime' => true
+            ]);
+            expect($stream->read())->toBe('HelloWorld');
 
         });
 
