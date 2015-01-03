@@ -31,9 +31,9 @@ describe("Stream", function() {
 
     describe("->__construct()", function() {
 
-        it("casts string as stream", function() {
+        it("creates a string stream", function() {
 
-            $stream = new Stream('HelloWorld');
+            $stream = new Stream(['string' => 'HelloWorld']);
             expect($stream->read(5))->toBe('Hello');
             expect($stream->read())->toBe('World');
             expect($stream->valid())->toBe(true);
@@ -47,7 +47,7 @@ describe("Stream", function() {
         it("throws an exception if the passed resource is not a valid resource", function() {
 
             $closure = function() {
-                $stream = new Stream([]);
+                $stream = new Stream(['resource' => []]);
                 $stream->resource();
             };
 
@@ -58,7 +58,7 @@ describe("Stream", function() {
         it("returns the resource", function() {
 
             $handle = fopen('php://temp', 'r+');
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->resource())->toBe($handle);
 
         });
@@ -68,7 +68,7 @@ describe("Stream", function() {
     describe("->meta()", function() {
 
         it("returns the meta data", function() {
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             $meta = $stream->meta();
 
             expect($meta['uri'])->toBe('php://temp');
@@ -81,12 +81,12 @@ describe("Stream", function() {
         });
 
         it("returns a specitic meta data entry", function() {
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             expect($stream->meta('stream_type'))->toBe('TEMP');
         });
 
         it("returns `null` for unexisting meta data entry", function() {
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             expect($stream->meta('unexisting'))->toBe(null);
         });
 
@@ -95,7 +95,7 @@ describe("Stream", function() {
     describe("->isLocal()", function() {
 
         it("returns `true` if the stream is a local stream", function() {
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             expect($stream->isLocal())->toBe(true);
         });
 
@@ -109,7 +109,10 @@ describe("Stream", function() {
                 if (strpos($mode, 'x') !== false) {
                     $this->filename .= 'bar';
                 }
-                $stream = new Stream(fopen('file://' . $this->filename, $mode));
+                $stream = new Stream([
+                    'file' => 'file://' . $this->filename,
+                    'mode' => $mode
+                ]);
                 expect($stream->readable())->toBe(true);
                 $stream->close();
             };
@@ -122,7 +125,10 @@ describe("Stream", function() {
                 if (strpos($mode, 'x') !== false) {
                     $this->filename .= 'bar';
                 }
-                $stream = new Stream(fopen('file://' . $this->filename, $mode));
+                $stream = new Stream([
+                    'file' => 'file://' . $this->filename,
+                    'mode' => $mode
+                ]);
                 expect($stream->readable())->toBe(false);
                 $stream->close();
             };
@@ -139,7 +145,10 @@ describe("Stream", function() {
                 if (strpos($mode, 'x') !== false) {
                     $this->filename .= 'bar';
                 }
-                $stream = new Stream(fopen('file://' . $this->filename, $mode));
+                $stream = new Stream([
+                    'file' => 'file://' . $this->filename,
+                    'mode' => $mode
+                ]);
                 expect($stream->writable())->toBe(true);
                 $stream->close();
             };
@@ -148,7 +157,10 @@ describe("Stream", function() {
 
         it("returns `false` if the stream is writable", function() {
 
-            $stream = new Stream(fopen('file://' . $this->filename, 'r'));
+            $stream = new Stream([
+                'file' => 'file://' . $this->filename,
+                'mode' => 'r'
+            ]);
             expect($stream->writable())->toBe(false);
             $stream->close();
 
@@ -160,7 +172,10 @@ describe("Stream", function() {
 
         it("returns `true` if the stream is seekable", function() {
 
-            $stream = new Stream(fopen('file://' . $this->filename, 'r'));
+            $stream = new Stream([
+                'file' => 'file://' . $this->filename,
+                'mode' => 'r'
+            ]);
             expect($stream->seekable())->toBe(true);
             $stream->close();
 
@@ -168,7 +183,10 @@ describe("Stream", function() {
 
         it("returns `false` if the stream is not seekable", function() {
 
-            $stream = new Stream(fopen('php://output', 'r'));
+            $stream = new Stream([
+                'file' => 'php://output',
+                'mode' => 'r'
+            ]);
             expect($stream->seekable())->toBe(false);
 
         });
@@ -178,7 +196,7 @@ describe("Stream", function() {
     describe("->bufferSize()", function() {
 
         it("changes the buffer size to 4096 by default", function() {
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             expect($stream->bufferSize())->toBe(4096);
 
             $stream->bufferSize(100);
@@ -192,7 +210,7 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream = new Stream(['file' => 'php://temp']);
                 $stream->close();
                 $stream->read();
             };
@@ -203,7 +221,10 @@ describe("Stream", function() {
         it("throws an exception on a non readable stream", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('file://' . $this->filename, 'w'));
+                $stream = new Stream([
+                    'file' => 'file://' . $this->filename,
+                    'mode' => 'w'
+                ]);
                 $stream->read();
             };
 
@@ -215,7 +236,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->read())->toBe('foo');
             expect($stream->valid())->toBe(true);
 
@@ -226,7 +247,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->bufferSize(1);
             expect($stream->read())->toBe('f');
             expect($stream->valid())->toBe(true);
@@ -238,7 +259,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->read(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
 
@@ -249,7 +270,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo bar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->read(2))->toBe('fo');
             expect($stream->read(2))->toBe('o ');
             expect($stream->read())->toBe('bar');
@@ -262,7 +283,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->read(3))->toBe('foo');
             expect($stream->read())->toBe('');
             expect($stream->valid())->toBe(true);
@@ -276,7 +297,7 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream = new Stream(['file' => 'php://temp']);
                 $stream->close();
                 $stream->getLine();
             };
@@ -287,7 +308,10 @@ describe("Stream", function() {
         it("throws an exception on a non readable stream", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('file://' . $this->filename, 'w'));
+                $stream = new Stream([
+                    'file' => 'file://' . $this->filename,
+                    'mode' => 'w'
+                ]);
                 $stream->getLine();
             };
 
@@ -299,7 +323,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
 
@@ -310,7 +334,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->bufferSize(1);
             expect($stream->getLine())->toBe('f');
             expect($stream->valid())->toBe(true);
@@ -319,14 +343,20 @@ describe("Stream", function() {
 
         it("checks buffer size is equal to 4096 by default", function() {
 
-            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            $stream = new Stream([
+                'file' => 'lorem://localhost',
+                'mode' => 'w+'
+            ]);
             expect(strlen($stream->read()))->toBe(4096);
 
         });
 
         it("can reads more than the buffer size limit when explicitly defined", function() {
 
-            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            $stream = new Stream([
+                'file' => 'lorem://localhost',
+                'mode' => 'w+'
+            ]);
             expect(strlen($stream->read(8192)))->toBe(8192);
 
         });
@@ -336,7 +366,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, "foo\nbar");
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
 
@@ -347,7 +377,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, "foo\nbar");
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
 
@@ -358,7 +388,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, "foobar");
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine(null, 'b'))->toBe('foo');
             expect($stream->valid())->toBe(true);
 
@@ -369,7 +399,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, "foo\nbar");
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->getLine())->toBe('bar');
             expect($stream->valid())->toBe(true);
@@ -381,7 +411,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foo');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine(3))->toBe('foo');
             expect($stream->getLine())->toBe('');
             expect($stream->valid())->toBe(true);
@@ -395,7 +425,10 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'w+'));
+                $stream = new Stream([
+                    'file' => 'php://temp',
+                    'mode' => 'w+'
+                ]);
                 $stream->close();
                 $stream->write('foo');
             };
@@ -406,7 +439,10 @@ describe("Stream", function() {
         it("throws an exception on a non writable stream", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r'));
+                $stream = new Stream([
+                    'file' => 'php://temp',
+                    'mode' => 'r'
+                ]);
                 $stream->write('foo');
             };
 
@@ -416,7 +452,7 @@ describe("Stream", function() {
         it("writes data to the stream", function() {
 
             $handle = fopen('php://temp', 'w+');
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $actual = $stream->write('foo');
             expect($actual)->toBe(3);
 
@@ -429,7 +465,7 @@ describe("Stream", function() {
         it("writes only a specified number of character", function() {
 
             $handle = fopen('php://temp', 'w+');
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $actual = $stream->write('foo', 2);
             expect($actual)->toBe(2);
 
@@ -448,9 +484,9 @@ describe("Stream", function() {
             $handle1 = fopen('php://temp', 'w+');
             fwrite($handle1, 'foobar');
             rewind($handle1);
-            $stream1 = new Stream($handle1);
+            $stream1 = new Stream(['resource' => $handle1]);
             $handle2 = fopen('php://temp', 'w+');
-            $stream2 = new Stream($handle2);
+            $stream2 = new Stream(['resource' => $handle2]);
             $actual = $stream1->pipe($stream2);
             expect($actual)->toBe(6);
 
@@ -468,7 +504,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->bufferSize(1);
             expect($stream->read(3))->toBe('foo');
             expect($stream->flush())->toBe('bar');
@@ -483,7 +519,7 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream([]);
+                $stream = new Stream(['resource' => []]);
                 $stream->timeout(5000);
             };
 
@@ -492,7 +528,10 @@ describe("Stream", function() {
 
         it("sets a timeout", function() {
 
-            $stream = new Stream(fopen('lorem://localhost', 'w+'));
+            $stream = new Stream([
+                'file' => 'lorem://localhost',
+                'mode' => 'w+'
+            ]);
             $stream->timeout(5000);
             expect($stream->timeout())->toBe(5000);
 
@@ -505,7 +544,7 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream = new Stream(['file' => 'php://temp']);
                 $stream->close();
                 $stream->seek(3);
             };
@@ -516,7 +555,10 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://output', 'r'));
+                $stream = new Stream([
+                    'file' => 'php://output',
+                    'mode' => 'r'
+                ]);
                 $stream->seek(3);
             };
 
@@ -528,7 +570,7 @@ describe("Stream", function() {
             $handle = fopen('file://' . $this->filename, 'w+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->seek(3);
             expect($stream->read(3))->toBe('bar');
             expect($stream->valid())->toBe(true);
@@ -544,7 +586,7 @@ describe("Stream", function() {
             $handle = fopen('file://' . $this->filename, 'w+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->seek(3);
             expect($stream->offset())->toBe(3);
 
@@ -555,12 +597,18 @@ describe("Stream", function() {
     describe("->valid()", function() {
 
         it("returns `true` if the stream is valid", function() {
-            $stream = new Stream(fopen('php://output', 'r'));
+            $stream = new Stream([
+                'file' => 'php://output',
+                'mode' => 'r'
+            ]);
             expect($stream->valid())->toBe(true);
         });
 
         it("returns `true` if the stream is not valid", function() {
-            $stream = new Stream(fopen('php://output', 'r'));
+            $stream = new Stream([
+                'file' => 'php://output',
+                'mode' => 'r'
+            ]);
             $stream->close();
             expect($stream->valid())->toBe(false);
         });
@@ -573,7 +621,7 @@ describe("Stream", function() {
         it("throws an exception if the stream is invalid", function() {
 
             $closure = function() {
-                $stream = new Stream(fopen('php://temp', 'r+'));
+                $stream = new Stream(['file' => 'php://temp']);
                 $stream->close();
                 $stream->eof();
             };
@@ -586,7 +634,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             expect($stream->eof())->toBe(false);
 
         });
@@ -596,7 +644,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->read();
             expect($stream->eof())->toBe(true);
 
@@ -611,7 +659,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foobar');
             rewind($handle);
-            $stream = new Stream($handle);
+            $stream = new Stream(['resource' => $handle]);
             $stream->bufferSize(1);
             expect((string) $stream)->toBe('foobar');
 
@@ -623,7 +671,7 @@ describe("Stream", function() {
 
         it("closes the stream", function() {
 
-            $stream = new Stream(fopen('php://temp', 'r+'));
+            $stream = new Stream(['file' => 'php://temp']);
             expect($stream->close())->toBe(true);
             expect($stream->valid())->toBe(false);
             expect($stream->close())->toBe(false);

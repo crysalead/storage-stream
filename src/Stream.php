@@ -8,7 +8,7 @@ class Stream
      *
      * @var resource
      */
-    protected $_resource;
+    protected $_resource = null;
 
     /**
      * The buffer size.
@@ -30,17 +30,27 @@ class Stream
      * @param resource $resource The stream resource.
      * @param array    $config   The configuration array.
      */
-    public function __construct($resource, $config = [])
+    public function __construct($config = [])
     {
         $defaults = [
+            'resource'   => null,
+            'file'       => null,
+            'string'     => '',
+            'mode'       => 'r+',
             'bufferSize' => 4096
         ];
         $config += $defaults;
 
-        if (is_string($resource)) {
+        if ($config['resource'] !== null) {
+            $resource = $config['resource'];
+        } elseif ($config['file'] !== null) {
+            $resource = fopen($config['file'], $config['mode']);
+        } else {
             $stream = fopen('php://temp', 'r+');
-            fwrite($stream, $resource);
-            rewind($stream);
+            if ($config['string']) {
+                fwrite($stream, $config['string']);
+                rewind($stream);
+            }
             $resource = $stream;
         }
 
@@ -306,7 +316,7 @@ class Stream
      */
     public function valid()
     {
-        return !!$this->_resource;
+        return !!$this->_resource && is_resource($this->_resource);
     }
 
     /**
