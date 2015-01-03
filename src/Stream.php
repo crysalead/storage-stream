@@ -11,6 +11,13 @@ class Stream
     protected $_resource = null;
 
     /**
+     * The mime info.
+     *
+     * @var string
+     */
+    protected $_mime = null;
+
+    /**
      * The buffer size.
      *
      * @var integer
@@ -37,7 +44,8 @@ class Stream
             'file'       => null,
             'string'     => '',
             'mode'       => 'r+',
-            'bufferSize' => 4096
+            'bufferSize' => 4096,
+            'mime'       => null
         ];
         $config += $defaults;
 
@@ -56,6 +64,48 @@ class Stream
 
         $this->_resource = $resource;
         $this->_bufferSize = $config['bufferSize'];
+        $this->_mime = $this->_getMime($config['mime']);
+    }
+
+    /**
+     * Mime detector.
+     * Concat the first 1024 bytes + the last 4 bytes of readable & seekable streams
+     * to detext the mime info.
+     *
+     * @param  string $mime The mime type detection. Possible values are:
+     *                      -`true`    : auto detect the mime.
+     *                      - a string : don't detect the mime and use the passed string instead.
+     *                      -`false`   : don't detect the mime.
+     * @return string       The detected mime.
+     */
+    protected function _getMime($mime)
+    {
+        if (is_string($mime)) {
+            return $mime;
+        }
+        if (!$mime || !$this->seekable() || !$this->readable()) {
+            return 'application/octet-stream';
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+        $begin = ftell($this->_resource);
+        fseek($this->_resource, 0, SEEK_END);
+        $end = ftell($this->_resource);
+
+        $size = min($end - $begin, 4);
+        if ($size === 0) {
+            return 'application/octet-stream';
+        }
+
+        fseek($this->_resource, $size, SEEK_SET);
+        $signature = fread($this->_resource, $size);
+
+        $size = min($end - $begin, 1024);
+        fseek($this->_resource, $begin, SEEK_SET);
+        $signature = fread($this->_resource, $size) . $signature;
+        fseek($this->_resource, $begin, SEEK_SET);
+
+        return finfo_buffer($finfo, $signature);
     }
 
     /**
@@ -69,6 +119,11 @@ class Stream
             throw new StreamException('Invalid resource');
         }
         return $this->_resource;
+    }
+
+    public function mime()
+    {
+        return $this->_mime;
     }
 
     /**

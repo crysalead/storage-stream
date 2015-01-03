@@ -680,4 +680,139 @@ describe("Stream", function() {
 
     });
 
+    describe("->mime()", function() {
+
+        it("returns the default mime", function() {
+
+            $stream = new Stream();
+            expect($stream->mime())->toBe('application/octet-stream');
+
+        });
+
+        it("returns the default mime for empty data", function() {
+
+            $stream = new Stream(['mime' => true]);
+            expect($stream->mime())->toBe('application/octet-stream');
+
+        });
+
+        it("returns the setted mime", function() {
+
+            $stream = new Stream(['mime' => 'application/json']);
+            expect($stream->mime())->toBe('application/json');
+
+        });
+
+        it("returns the default mime when the stream is not readable", function() {
+
+            $stream = new Stream([
+                'file' => 'php://temp',
+                'mode' => 'w'
+            ]);
+            expect($stream->mime())->toBe('application/octet-stream');
+
+        });
+
+        it("returns the default mime when the stream is not seekable", function() {
+
+            $stream = new Stream([
+                'file' => 'php://output',
+                'mode' => 'r'
+            ]);
+            expect($stream->mime())->toBe('application/octet-stream');
+
+        });
+
+        it("returns the plain text mime with a simple string", function() {
+
+            $stream = new Stream([
+                'string' => 'HelloWorld',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('text/plain');
+
+        });
+
+        it("returns the plain text mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/helloworld.txt',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('text/plain');
+
+        });
+
+        it("returns the odt mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/helloworld.odt',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('application/vnd.oasis.opendocument.text');
+
+        });
+
+        it("returns the gzip mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/helloworld.txt.gz',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('application/x-gzip');
+
+        });
+
+        it("returns the tar mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/helloworld.tar',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('application/x-tar');
+
+        });
+
+        it("returns the jpg mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/favicon.jpg',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('image/jpeg');
+
+        });
+
+        it("returns the png mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/favicon.png',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('image/png');
+
+        });
+
+        it("returns the gif mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/favicon.gif',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('image/gif');
+
+        });
+
+        it("returns the wav mime", function() {
+
+            $stream = new Stream([
+                'file' => 'spec/fixture/sound.wav',
+                'mime'   => true
+            ]);
+            expect($stream->mime())->toBe('audio/x-wav');
+
+        });
+
+    });
+
 });
