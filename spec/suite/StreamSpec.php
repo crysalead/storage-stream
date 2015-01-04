@@ -38,6 +38,8 @@ describe("Stream", function() {
             expect($stream->read())->toBe('World');
             expect($stream->valid())->toBe(true);
             expect($stream->eof())->toBe(true);
+            $stream->close();
+
         });
 
     });
@@ -60,6 +62,7 @@ describe("Stream", function() {
             $handle = fopen('php://temp', 'r+');
             $stream = new Stream(['resource' => $handle]);
             expect($stream->resource())->toBe($handle);
+            $stream->close();
 
         });
 
@@ -68,6 +71,7 @@ describe("Stream", function() {
     describe("->meta()", function() {
 
         it("returns the meta data", function() {
+
             $stream = new Stream(['file' => 'php://temp']);
             $meta = $stream->meta();
 
@@ -78,16 +82,24 @@ describe("Stream", function() {
             expect($stream->writable())->toBe(true);
             expect($meta['unread_bytes'])->toBe(0);
             expect($meta['seekable'])->toBe(true);
+            $stream->close();
+
         });
 
         it("returns a specitic meta data entry", function() {
+
             $stream = new Stream(['file' => 'php://temp']);
             expect($stream->meta('stream_type'))->toBe('TEMP');
+            $stream->close();
+
         });
 
         it("returns `null` for unexisting meta data entry", function() {
+
             $stream = new Stream(['file' => 'php://temp']);
             expect($stream->meta('unexisting'))->toBe(null);
+            $stream->close();
+
         });
 
     });
@@ -95,8 +107,11 @@ describe("Stream", function() {
     describe("->isLocal()", function() {
 
         it("returns `true` if the stream is a local stream", function() {
+
             $stream = new Stream(['file' => 'php://temp']);
             expect($stream->isLocal())->toBe(true);
+            $stream->close();
+
         });
 
     });
@@ -188,6 +203,7 @@ describe("Stream", function() {
                 'mode' => 'r'
             ]);
             expect($stream->seekable())->toBe(false);
+            $stream->close();
 
         });
 
@@ -201,6 +217,8 @@ describe("Stream", function() {
 
             $stream->bufferSize(100);
             expect($stream->bufferSize())->toBe(100);
+            $stream->close();
+
         });
 
     });
@@ -239,6 +257,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->read())->toBe('foo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -251,6 +270,7 @@ describe("Stream", function() {
             $stream->bufferSize(1);
             expect($stream->read())->toBe('f');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -262,6 +282,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->read(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -275,6 +296,7 @@ describe("Stream", function() {
             expect($stream->read(2))->toBe('o ');
             expect($stream->read())->toBe('bar');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -287,6 +309,7 @@ describe("Stream", function() {
             expect($stream->read(3))->toBe('foo');
             expect($stream->read())->toBe('');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -326,6 +349,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -338,6 +362,7 @@ describe("Stream", function() {
             $stream->bufferSize(1);
             expect($stream->getLine())->toBe('f');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -348,6 +373,7 @@ describe("Stream", function() {
                 'mode' => 'w+'
             ]);
             expect(strlen($stream->read()))->toBe(4096);
+            $stream->close();
 
         });
 
@@ -358,6 +384,7 @@ describe("Stream", function() {
                 'mode' => 'w+'
             ]);
             expect(strlen($stream->read(8192)))->toBe(8192);
+            $stream->close();
 
         });
 
@@ -369,6 +396,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -380,6 +408,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -391,6 +420,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             expect($stream->getLine(null, 'b'))->toBe('foo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -403,6 +433,7 @@ describe("Stream", function() {
             expect($stream->getLine())->toBe('foo');
             expect($stream->getLine())->toBe('bar');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -415,6 +446,7 @@ describe("Stream", function() {
             expect($stream->getLine(3))->toBe('foo');
             expect($stream->getLine())->toBe('');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -459,6 +491,7 @@ describe("Stream", function() {
             $stream->rewind();
             expect($stream->read())->toBe('foo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -472,6 +505,7 @@ describe("Stream", function() {
             $stream->rewind();
             expect($stream->read())->toBe('fo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -489,9 +523,11 @@ describe("Stream", function() {
             $stream2 = new Stream(['resource' => $handle2]);
             $actual = $stream1->pipe($stream2);
             expect($actual)->toBe(6);
+            $stream1->close();
 
             $stream2->rewind();
             expect($stream2->read())->toBe('foobar');
+            $stream2->close();
 
         });
 
@@ -509,6 +545,7 @@ describe("Stream", function() {
             expect($stream->read(3))->toBe('foo');
             expect($stream->flush())->toBe('bar');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -534,6 +571,7 @@ describe("Stream", function() {
             ]);
             $stream->timeout(5000);
             expect($stream->timeout())->toBe(5000);
+            $stream->close();
 
         });
 
@@ -574,6 +612,7 @@ describe("Stream", function() {
             $stream->seek(3);
             expect($stream->read(3))->toBe('bar');
             expect($stream->valid())->toBe(true);
+            $stream->close();
 
         });
 
@@ -589,6 +628,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             $stream->seek(3);
             expect($stream->offset())->toBe(3);
+            $stream->close();
 
         });
 
@@ -602,6 +642,7 @@ describe("Stream", function() {
                 'mode' => 'r'
             ]);
             expect($stream->valid())->toBe(true);
+            $stream->close();
         });
 
         it("returns `true` if the stream is not valid", function() {
@@ -636,6 +677,7 @@ describe("Stream", function() {
             rewind($handle);
             $stream = new Stream(['resource' => $handle]);
             expect($stream->eof())->toBe(false);
+            $stream->close();
 
         });
 
@@ -647,6 +689,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             $stream->read();
             expect($stream->eof())->toBe(true);
+            $stream->close();
 
         });
 
@@ -662,6 +705,7 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
             $stream->bufferSize(1);
             expect((string) $stream)->toBe('foobar');
+            $stream->close();
 
         });
 
@@ -688,7 +732,6 @@ describe("Stream", function() {
             $stream = new Stream(['resource' => $handle]);
 
             expect($stream->size())->toBe(-1);
-
             $stream->close();
 
         });
@@ -702,6 +745,7 @@ describe("Stream", function() {
             expect($stream->size())->toBe(6);
             rewind($handle);
             expect($stream->size())->toBe(6);
+            $stream->close();
         });
 
     });
@@ -712,6 +756,7 @@ describe("Stream", function() {
 
             $stream = new Stream();
             expect($stream->mime())->toBe('application/octet-stream');
+            $stream->close();
 
         });
 
@@ -719,6 +764,7 @@ describe("Stream", function() {
 
             $stream = new Stream(['mime' => true]);
             expect($stream->mime())->toBe('application/octet-stream');
+            $stream->close();
 
         });
 
@@ -726,6 +772,7 @@ describe("Stream", function() {
 
             $stream = new Stream(['mime' => 'application/json']);
             expect($stream->mime())->toBe('application/json');
+            $stream->close();
 
         });
 
@@ -736,6 +783,7 @@ describe("Stream", function() {
                 'mode' => 'w'
             ]);
             expect($stream->mime())->toBe('application/octet-stream');
+            $stream->close();
 
         });
 
@@ -746,6 +794,7 @@ describe("Stream", function() {
                 'mode' => 'r'
             ]);
             expect($stream->mime())->toBe('application/octet-stream');
+            $stream->close();
 
         });
 
@@ -756,6 +805,7 @@ describe("Stream", function() {
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('text/plain');
+            $stream->close();
 
         });
 
@@ -766,6 +816,7 @@ describe("Stream", function() {
                 'mime' => true
             ]);
             expect($stream->read())->toBe('HelloWorld');
+            $stream->close();
 
         });
 
@@ -776,6 +827,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('text/plain');
+            $stream->close();
 
         });
 
@@ -786,6 +838,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('application/vnd.oasis.opendocument.text');
+            $stream->close();
 
         });
 
@@ -796,6 +849,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('application/x-gzip');
+            $stream->close();
 
         });
 
@@ -806,6 +860,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('application/x-tar');
+            $stream->close();
 
         });
 
@@ -816,6 +871,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('image/jpeg');
+            $stream->close();
 
         });
 
@@ -826,6 +882,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('image/png');
+            $stream->close();
 
         });
 
@@ -836,6 +893,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('image/gif');
+            $stream->close();
 
         });
 
@@ -846,6 +904,7 @@ describe("Stream", function() {
                 'mime'   => true
             ]);
             expect($stream->mime())->toBe('audio/x-wav');
+            $stream->close();
 
         });
 
