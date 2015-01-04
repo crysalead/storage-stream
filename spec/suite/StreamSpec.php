@@ -680,6 +680,32 @@ describe("Stream", function() {
 
     });
 
+    describe("->size()", function() {
+
+        it("returns -1 if the stream in not seekable.", function() {
+
+            $handle = fopen('php://output', 'r');
+            $stream = new Stream(['resource' => $handle]);
+
+            expect($stream->size())->toBe(-1);
+
+            $stream->close();
+
+        });
+
+        it("returns the size of the stream.", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            $stream = new Stream(['resource' => $handle]);
+
+            expect($stream->size())->toBe(6);
+            rewind($handle);
+            expect($stream->size())->toBe(6);
+        });
+
+    });
+
     describe("->mime()", function() {
 
         it("returns the default mime", function() {

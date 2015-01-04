@@ -363,7 +363,9 @@ class Stream
     }
 
     /**
-     * Moves the file pointer to the beginning of the stream
+     * Moves the file pointer to the beginning of the stream.
+     *
+     * @return Boolean
      */
     public function rewind()
     {
@@ -372,11 +374,36 @@ class Stream
     }
 
     /**
+     * Checks if the stream is valid.
+     *
      * @return Boolean
      */
     public function valid()
     {
         return !!$this->_resource && is_resource($this->_resource);
+    }
+
+    /**
+     * Returns the stream size.
+     *
+     * @return integer
+     */
+    public function size()
+    {
+        if (!$this->seekable()) {
+            return -1;
+        }
+
+        $start = ftell($this->_resource);
+
+        fseek($this->_resource, 0, SEEK_SET);
+        $begin = ftell($this->_resource);
+
+        fseek($this->_resource, 0, SEEK_END);
+        $end = ftell($this->_resource);
+
+        fseek($this->_resource, $start, SEEK_SET);
+        return $end - $begin;
     }
 
     /**
