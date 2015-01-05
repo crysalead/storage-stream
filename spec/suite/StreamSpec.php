@@ -809,6 +809,26 @@ describe("Stream", function() {
 
         });
 
+        it("lazily autodetect the mime", function() {
+
+            $stream = new Stream(['data' => 'HelloWorld']);
+            expect($stream->mime())->toBe('application/octet-stream');
+            $stream->mime(true);
+            expect($stream->mime())->toBe('text/plain');
+            $stream->close();
+
+        });
+
+        it("lazily sets the mime", function() {
+
+            $stream = new Stream(['data' => 'HelloWorld']);
+            expect($stream->mime())->toBe('application/octet-stream');
+            $stream->mime('text/plain');
+            expect($stream->mime())->toBe('text/plain');
+            $stream->close();
+
+        });
+
         it("keeps the stream position inchanged even with mime autodetection enabled", function() {
 
             $stream = new Stream([

@@ -126,9 +126,18 @@ class Stream
         return $this->_resource;
     }
 
-    public function mime()
+    /**
+     * Gets/sets the stream mime.
+     *
+     * @parma  mixed  The mime string to set or `true` to autodetect the mime.
+     * @return string The mime.
+     */
+    public function mime($mime = null)
     {
-        return $this->_mime;
+        if ($mime === null) {
+            return $this->_mime;
+        }
+        return $this->_mime = $this->_getMime($mime);
     }
 
     /**
