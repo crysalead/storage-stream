@@ -126,7 +126,7 @@ class Stream
      */
     public function mime($mime = null)
     {
-        if ($mime === null) {
+        if (func_num_args() === 0) {
             return $this->_mime;
         }
         return $this->_mime = $this->_getMime($mime);

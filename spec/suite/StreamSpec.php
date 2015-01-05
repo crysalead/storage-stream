@@ -778,6 +778,16 @@ describe("Stream", function() {
 
         });
 
+        it("lazily sets the default mime", function() {
+
+            $stream = new Stream(['data' => 'HelloWorld', 'mime' => true]);
+            expect($stream->mime())->toBe('text/plain');
+            $stream->mime(null);
+            expect($stream->mime())->toBe('application/octet-stream');
+            $stream->close();
+
+        });
+
         it("keeps the stream position inchanged even with mime autodetection enabled", function() {
 
             $stream = new Stream([
