@@ -550,7 +550,13 @@ class Stream
      * @return string
      */
     public function __toString() {
-        return $this->flush();
+        if (!$this->seekable()) {
+            return $this->flush();
+        }
+        $old = $this->offset();
+        $result = $this->flush();
+        $this->seek($old);
+        return $result;
     }
 
     /**

@@ -827,6 +827,50 @@ describe("Stream", function() {
 
         });
 
+        it("allows seekable stream to be read multiple times", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream(['data' => $handle]);
+            $stream->bufferSize(1);
+            expect((string) $stream)->toBe('foobar');
+            expect((string) $stream)->toBe('foobar');
+            expect((string) $stream)->toBe('foobar');
+            $stream->close();
+
+        });
+
+        it("restore seekable stream to the current offset", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream(['data' => $handle]);
+            $stream->bufferSize(1);
+            expect($stream->read(3))->toBe('foo');
+            expect((string) $stream)->toBe('bar');
+            expect((string) $stream)->toBe('bar');
+            expect((string) $stream)->toBe('bar');
+            $stream->close();
+
+        });
+
+        it("just flushes unseekable stream", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foobar');
+            rewind($handle);
+            $stream = new Stream(['data' => $handle]);
+
+            Stub::on($stream)->method('seekable')->andReturn(false);
+
+            expect((string) $stream)->toBe('foobar');
+            expect((string) $stream)->toBe('');
+            $stream->close();
+
+        });
+
     });
 
     describe("->close()", function() {
