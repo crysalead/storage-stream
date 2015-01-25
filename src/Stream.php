@@ -113,7 +113,7 @@ class Stream
     public function resource()
     {
         if (!$this->valid()) {
-            throw new StreamException('Invalid resource');
+            throw new StreamException('Invalid resource.');
         }
         return $this->_resource;
     }
@@ -121,8 +121,8 @@ class Stream
     /**
      * Gets/sets the stream mime.
      *
-     * @parma  mixed  The mime string to set or `true` to autodetect the mime.
-     * @return string The mime.
+     * @param  mixed  $mime The mime string to set or `true` to autodetect the mime.
+     * @return string       The mime.
      */
     public function mime($mime = null)
     {
@@ -179,14 +179,17 @@ class Stream
         return $mode[0] === 'r' || strpos($mode, '+');
     }
 
+    /**
+     * Throws an exception if a stream is not readable.
+     */
     protected function _readable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot read from a closed stream');
+            throw new StreamException('Cannot read from a closed stream.');
         }
         if (!$this->readable()) {
             $mode = $this->meta('mode');
-            throw new StreamException("Cannot read on a non-readable stream (mode is `'{$mode}'`)");
+            throw new StreamException("Cannot read on a non-readable stream (mode is `'{$mode}'`).");
         }
     }
 
@@ -201,14 +204,17 @@ class Stream
         return $mode[0] !== 'r' || strpos($mode, '+');
     }
 
+    /**
+     * Throws an exception if a stream is not writable.
+     */
     protected function _writable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot write on a closed stream');
+            throw new StreamException('Cannot write on a closed stream.');
         }
         if (!$this->writable()) {
             $mode = $this->meta('mode');
-            throw new StreamException("Cannot write on a non-writable stream (mode is `'{$mode}'`)");
+            throw new StreamException("Cannot write on a non-writable stream (mode is `'{$mode}'`).");
         }
     }
 
@@ -222,13 +228,16 @@ class Stream
         return $this->meta('seekable');
     }
 
+    /**
+     * Throws an exception if a stream is not seekable.
+     */
     protected function _seekable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot seek on a closed stream');
+            throw new StreamException('Cannot seek on a closed stream.');
         }
         if (!$this->seekable()) {
-            throw new StreamException('Cannot seek on a non-seekable stream');
+            throw new StreamException('Cannot seek on a non-seekable stream.');
         }
     }
 
@@ -331,7 +340,7 @@ class Stream
             return $this->_timeout;
         }
         if (!$this->valid()) {
-            throw new StreamException("Invalid stream resource, unable to set a timeout on it");
+            throw new StreamException("Invalid stream resource, unable to set a timeout on it.");
         }
         $this->_timeout = $delay;
         return stream_set_timeout($this->_resource, 0, $delay);

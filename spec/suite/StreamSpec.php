@@ -54,7 +54,7 @@ describe("Stream", function() {
                 $stream->resource();
             };
 
-            expect($closure)->toThrow(new StreamException('Invalid resource'));
+            expect($closure)->toThrow(new StreamException('Invalid resource.'));
 
         });
 
@@ -148,7 +148,7 @@ describe("Stream", function() {
 
     });
 
-    describe("->writeable()", function() {
+    describe("->writable()", function() {
 
         it("returns `true` if the stream is writable", function() {
 
@@ -163,7 +163,7 @@ describe("Stream", function() {
 
         });
 
-        it("returns `false` if the stream is writable", function() {
+        it("returns `false` if the stream is not writable", function() {
 
             $stream = new Stream(['data' => fopen('file://' . $this->filename, 'r')]);
             expect($stream->writable())->toBe(false);
@@ -217,7 +217,7 @@ describe("Stream", function() {
                 $stream->read();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream'));
+            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
         });
 
         it("throws an exception on a non readable stream", function() {
@@ -306,7 +306,7 @@ describe("Stream", function() {
                 $stream->getLine();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream'));
+            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
         });
 
         it("throws an exception on a non readable stream", function() {
@@ -434,7 +434,7 @@ describe("Stream", function() {
                 $stream->write('foo');
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot write on a closed stream'));
+            expect($closure)->toThrow(new StreamException('Cannot write on a closed stream.'));
         });
 
         it("throws an exception on a non writable stream", function() {
@@ -527,7 +527,7 @@ describe("Stream", function() {
                 $stream->timeout(5000);
             };
 
-            expect($closure)->toThrow(new StreamException('Invalid stream resource, unable to set a timeout on it'));
+            expect($closure)->toThrow(new StreamException('Invalid stream resource, unable to set a timeout on it.'));
         });
 
         it("sets a timeout", function() {
@@ -551,7 +551,7 @@ describe("Stream", function() {
                 $stream->seek(3);
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot seek on a closed stream'));
+            expect($closure)->toThrow(new StreamException('Cannot seek on a closed stream.'));
         });
 
         it("throws an exception if the stream is invalid", function() {
@@ -561,7 +561,7 @@ describe("Stream", function() {
                 $stream->seek(3);
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot seek on a non-seekable stream'));
+            expect($closure)->toThrow(new StreamException('Cannot seek on a non-seekable stream.'));
         });
 
         it("seeks to a specified position", function() {
@@ -611,7 +611,6 @@ describe("Stream", function() {
 
     });
 
-
     describe("->eof()", function() {
 
         it("throws an exception if the stream is invalid", function() {
@@ -622,7 +621,7 @@ describe("Stream", function() {
                 $stream->eof();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream'));
+            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
         });
 
         it("returns `false` if the end of the stream has not been reached", function() {
@@ -652,7 +651,7 @@ describe("Stream", function() {
 
     describe("->__toString()", function() {
 
-        it("reads the remaining data from the stream.", function() {
+        it("reads the remaining data from the stream", function() {
 
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, 'foobar');
