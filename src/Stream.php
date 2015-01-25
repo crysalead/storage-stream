@@ -353,7 +353,6 @@ class Stream
      */
     public function offset()
     {
-        $this->_seekable();
         return ftell($this->_resource);
     }
 
