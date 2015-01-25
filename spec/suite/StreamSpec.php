@@ -280,10 +280,7 @@ describe("Stream", function() {
 
         it("reads data from the stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             expect($stream->read())->toBe('foo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -292,10 +289,7 @@ describe("Stream", function() {
 
         it("reads data from the stream regardless of buffer size", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             $stream->bufferSize(1);
             expect($stream->read())->toBe('f');
             expect($stream->valid())->toBe(true);
@@ -305,10 +299,7 @@ describe("Stream", function() {
 
         it("reads only a specified number of character", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             expect($stream->read(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -317,10 +308,7 @@ describe("Stream", function() {
 
         it("reads continuously", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo bar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo bar']);
             expect($stream->read(2))->toBe('fo');
             expect($stream->read(2))->toBe('o ');
             expect($stream->read())->toBe('bar');
@@ -331,11 +319,8 @@ describe("Stream", function() {
 
         it("reads according a setted range", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo bar baz');
-            rewind($handle);
             $stream = new Stream([
-                'data'   => $handle,
+                'data'   => 'foo bar baz',
                 'start'  => 4,
                 'length' => 3
             ]);
@@ -349,10 +334,7 @@ describe("Stream", function() {
 
         it("returns `false` at the end of the stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             expect($stream->read(3))->toBe('foo');
             expect($stream->read())->toBe('');
             expect($stream->valid())->toBe(true);
@@ -387,10 +369,7 @@ describe("Stream", function() {
 
         it("reads data from the stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -399,10 +378,7 @@ describe("Stream", function() {
 
         it("reads data from the stream regardless of buffer size", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             $stream->bufferSize(1);
             expect($stream->getLine())->toBe('f');
             expect($stream->valid())->toBe(true);
@@ -428,10 +404,7 @@ describe("Stream", function() {
 
         it("reads only a specified number of character", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, "foo\nbar");
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => "foo\nbar"]);
             expect($stream->getLine(2))->toBe('fo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -440,10 +413,7 @@ describe("Stream", function() {
 
         it("stops at new line", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, "foo\nbar");
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => "foo\nbar"]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -452,10 +422,7 @@ describe("Stream", function() {
 
         it("stops at a custom character", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, "foobar");
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => "foobar"]);
             expect($stream->getLine(null, 'b'))->toBe('foo');
             expect($stream->valid())->toBe(true);
             $stream->close();
@@ -464,10 +431,7 @@ describe("Stream", function() {
 
         it("reads continuously", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, "foo\nbar");
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => "foo\nbar"]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->getLine())->toBe('bar');
             expect($stream->valid())->toBe(true);
@@ -477,11 +441,8 @@ describe("Stream", function() {
 
         it("reads according a setted range", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, "foo\nbar\nbaz");
-            rewind($handle);
             $stream = new Stream([
-                'data'   => $handle,
+                'data'   => "foo\nbar\nbaz",
                 'start'  => 4,
                 'length' => 3
             ]);
@@ -494,10 +455,7 @@ describe("Stream", function() {
 
         it("returns `false` when the stream is empty", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foo');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foo']);
             expect($stream->getLine(3))->toBe('foo');
             expect($stream->getLine())->toBe('');
             expect($stream->valid())->toBe(true);
@@ -564,12 +522,9 @@ describe("Stream", function() {
 
         it("pipes on stream to another", function() {
 
-            $handle1 = fopen('php://temp', 'w+');
-            fwrite($handle1, 'foobar');
-            rewind($handle1);
-            $stream1 = new Stream(['data' => $handle1]);
+            $stream1 = new Stream(['data' => 'foobar']);
             $handle2 = fopen('php://temp', 'w+');
-            $stream2 = new Stream(['data' => $handle2]);
+            $stream2 = new Stream();
             $actual = $stream1->pipe($stream2);
             expect($actual)->toBe(6);
             $stream1->close();
@@ -586,10 +541,7 @@ describe("Stream", function() {
 
         it("reads the remaining data from the stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
             expect($stream->read(3))->toBe('foo');
             expect($stream->flush())->toBe('bar');
@@ -649,10 +601,7 @@ describe("Stream", function() {
 
         it("seeks to a specified position", function() {
 
-            $handle = fopen('file://' . $this->filename, 'w+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->seek(3);
             expect($stream->read(3))->toBe('bar');
             expect($stream->valid())->toBe(true);
@@ -747,10 +696,7 @@ describe("Stream", function() {
 
         it("seeks to a specified position", function() {
 
-            $handle = fopen('file://' . $this->filename, 'w+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->seek(3);
             expect($stream->offset())->toBe(3);
             $stream->close();
@@ -762,15 +708,19 @@ describe("Stream", function() {
     describe("->valid()", function() {
 
         it("returns `true` if the stream is valid", function() {
+
             $stream = new Stream(['data' => fopen('php://output', 'r')]);
             expect($stream->valid())->toBe(true);
             $stream->close();
+
         });
 
         it("returns `true` if the stream is not valid", function() {
+
             $stream = new Stream(['data' => fopen('php://output', 'r')]);
             $stream->close();
             expect($stream->valid())->toBe(false);
+
         });
 
     });
@@ -790,10 +740,7 @@ describe("Stream", function() {
 
         it("returns `false` if the end of the stream has not been reached", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             expect($stream->eof())->toBe(false);
             $stream->close();
 
@@ -801,10 +748,7 @@ describe("Stream", function() {
 
         it("returns `true` if the end of the stream has been reached", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->read();
             expect($stream->eof())->toBe(true);
             $stream->close();
@@ -817,10 +761,7 @@ describe("Stream", function() {
 
         it("reads the remaining data from the stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
             expect((string) $stream)->toBe('foobar');
             $stream->close();
@@ -829,10 +770,7 @@ describe("Stream", function() {
 
         it("allows seekable stream to be read multiple times", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
             expect((string) $stream)->toBe('foobar');
             expect((string) $stream)->toBe('foobar');
@@ -843,10 +781,7 @@ describe("Stream", function() {
 
         it("restore seekable stream to the current offset", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
             expect($stream->read(3))->toBe('foo');
             expect((string) $stream)->toBe('bar');
@@ -858,10 +793,7 @@ describe("Stream", function() {
 
         it("just flushes unseekable stream", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            rewind($handle);
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
 
             Stub::on($stream)->method('seekable')->andReturn(false);
 
@@ -877,7 +809,7 @@ describe("Stream", function() {
 
         it("closes the stream", function() {
 
-            $stream = new Stream(['data' => fopen('php://temp', 'r+')]);
+            $stream = new Stream();
             expect($stream->close())->toBe(true);
             expect($stream->valid())->toBe(false);
             expect($stream->close())->toBe(false);
@@ -900,12 +832,11 @@ describe("Stream", function() {
 
         it("returns the size of the stream.", function() {
 
-            $handle = fopen('php://temp', 'r+');
-            fwrite($handle, 'foobar');
-            $stream = new Stream(['data' => $handle]);
+            $stream = new Stream(['data' => 'foobar']);
 
             expect($stream->size())->toBe(6);
-            rewind($handle);
+            $stream->rewind();
+
             expect($stream->size())->toBe(6);
             $stream->close();
         });
