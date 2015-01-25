@@ -70,6 +70,54 @@ describe("Stream", function() {
 
     });
 
+    describe("->start()", function() {
+
+        it("get/sets the offset start", function() {
+            $stream = new Stream(['data' => 'foo bar']);
+            expect($stream->start())->toBe(0);
+
+            expect($stream->start(4))->toBe(4);
+            expect($stream->start())->toBe(4);
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->length()", function() {
+
+        it("get/sets the stream length", function() {
+            $stream = new Stream(['data' => 'foo bar']);
+            expect($stream->length())->toBe(null);
+
+            expect($stream->length(3))->toBe(3);
+            expect($stream->length())->toBe(3);
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->range()", function() {
+
+        it("get/sets the range", function() {
+            $stream = new Stream(['data' => 'foo bar']);
+            expect($stream->range())->toBe('0-');
+
+            expect($stream->range('3-'))->toBe('3-');
+            expect($stream->start())->toBe(3);
+            expect($stream->length())->toBe(null);
+
+            expect($stream->range('1-3'))->toBe('1-3');
+            expect($stream->start())->toBe(1);
+            expect($stream->length())->toBe(2);
+
+            $stream->close();
+
+        });
+
+    });
+
     describe("->meta()", function() {
 
         it("returns the meta data", function() {
@@ -281,6 +329,24 @@ describe("Stream", function() {
 
         });
 
+        it("reads according a setted range", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, 'foo bar baz');
+            rewind($handle);
+            $stream = new Stream([
+                'data'   => $handle,
+                'start'  => 4,
+                'length' => 3
+            ]);
+            expect($stream->read())->toBe('bar');
+            expect($stream->read())->toBe('');
+            expect($stream->valid())->toBe(true);
+            expect($stream->eof())->toBe(true);
+            $stream->close();
+
+        });
+
         it("returns `false` at the end of the stream", function() {
 
             $handle = fopen('php://temp', 'r+');
@@ -404,6 +470,23 @@ describe("Stream", function() {
             $stream = new Stream(['data' => $handle]);
             expect($stream->getLine())->toBe('foo');
             expect($stream->getLine())->toBe('bar');
+            expect($stream->valid())->toBe(true);
+            $stream->close();
+
+        });
+
+        it("reads according a setted range", function() {
+
+            $handle = fopen('php://temp', 'r+');
+            fwrite($handle, "foo\nbar\nbaz");
+            rewind($handle);
+            $stream = new Stream([
+                'data'   => $handle,
+                'start'  => 4,
+                'length' => 3
+            ]);
+            expect($stream->getLine())->toBe('bar');
+            expect($stream->getLine())->toBe('');
             expect($stream->valid())->toBe(true);
             $stream->close();
 
@@ -573,6 +656,87 @@ describe("Stream", function() {
             $stream->seek(3);
             expect($stream->read(3))->toBe('bar');
             expect($stream->valid())->toBe(true);
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->rewind()", function() {
+
+        it("rewinds a stream", function() {
+
+            $stream = new Stream(['data' => 'foo bar']);
+
+            expect($stream->read())->toBe('foo bar');
+            expect($stream->read())->toBe('');
+
+            expect($stream->rewind())->toBe(0);
+            expect($stream->read())->toBe('foo bar');
+            $stream->close();
+
+        });
+
+        it("rewinds a stream according the range constraint", function() {
+
+            $stream = new Stream([
+                'data'   => 'foo bar baz',
+                'start'  => 4,
+                'length' => 3
+            ]);
+
+            expect($stream->read())->toBe('bar');
+            expect($stream->read())->toBe('');
+
+            expect($stream->rewind())->toBe(4);
+            expect($stream->read())->toBe('bar');
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->begin()", function() {
+
+        it("aliases rewind()", function() {
+
+            $stream = new Stream(['data' => 'foo bar']);
+
+            expect($stream)->toReceive('rewind');
+
+            $stream->begin();
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->end()", function() {
+
+        it("seeks to the end of the stream", function() {
+
+            $stream = new Stream(['data' => 'foo bar baz']);
+
+            expect($stream->end())->toBe(11);
+            expect($stream->read())->toBe('');
+            expect($stream->eof())->toBe(true);
+
+            $stream->close();
+
+        });
+
+        it("seeks to the end of the stream according the range constraint", function() {
+
+            $stream = new Stream([
+                'data'   => 'foo bar baz',
+                'start'  => 4,
+                'length' => 3
+            ]);
+
+            expect($stream->end())->toBe(7);
+            expect($stream->read())->toBe('');
+            expect($stream->eof())->toBe(true);
+
             $stream->close();
 
         });

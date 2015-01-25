@@ -25,6 +25,20 @@ class Stream
     protected $_bufferSize = 4096;
 
     /**
+     * The start offset from start.
+     *
+     * @var integer
+     */
+    protected $_start = 0;
+
+    /**
+     * The range length.
+     *
+     * @var integer
+     */
+    protected $_length = null;
+
+    /**
      * The timeout in microseconds
      *
      * @var integer
@@ -44,6 +58,8 @@ class Stream
         $defaults = [
             'data'       => '',
             'mime'       => null,
+            'start'      => 0,
+            'length'     => null,
             'bufferSize' => 4096
         ];
         $config += $defaults;
@@ -61,7 +77,12 @@ class Stream
 
         $this->_resource = $resource;
         $this->_bufferSize = $config['bufferSize'];
+        $this->_start = $config['start'];
+        $this->_length = $config['length'];
         $this->_mime = $this->_getMime($config['mime']);
+        if ($this->_start > 0) {
+            $this->rewind();
+        }
     }
 
     /**
@@ -116,6 +137,56 @@ class Stream
             throw new StreamException('Invalid resource.');
         }
         return $this->_resource;
+    }
+
+    /**
+     * Gets/sets the starting offset.
+     *
+     * @param  integer $start The offset to set.
+     * @return string         The setted offset.
+     */
+    public function start($start = null, $autoseek = true)
+    {
+        if (func_num_args() === 0) {
+            return $this->_start;
+        }
+        $this->_start = $start;
+
+        if ($autoseek) {
+            $this->rewind();
+        }
+
+        return $this->_start;
+    }
+
+    /**
+     * Gets/sets the stream range length.
+     *
+     * @param  integer $length The length to set.
+     * @return string          The setted length.
+     */
+    public function length($length = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_length;
+        }
+        return $this->_length = $length;
+    }
+
+    /**
+     * Gets/sets the range.
+     *
+     * @param  integer $range The range to set.
+     * @return string         The setted range.
+     */
+    public function range($range = null)
+    {
+        if (func_num_args() === 1) {
+            $values = explode('-', $range);
+            $this->_start = (integer) $values[0];
+            $this->_length = $values[1] !== '' ? $values[1] - $values[0] : null;
+        }
+        return $this->_start . '-' . ($this->_length ? $this->_start + $this->_length : '');
     }
 
     /**
@@ -265,11 +336,31 @@ class Stream
     public function read($length = null)
     {
         $this->_readable();
-        if (null == $length) {
-            $length = $this->_bufferSize;
+        $length = $this->_bufferSize($length);
+        if ($length <= 0) {
+            return '';
         }
         $result = fread($this->_resource, $length);
         return $result === false ? '' : $result;
+    }
+
+    /**
+     * Determines the buffer size to read.
+     *
+     * @param  integer $length Maximum number of bytes to read (default to buffer size).
+     * @return integer         The allowed size.
+     */
+    protected function _bufferSize($length)
+    {
+        if ($this->_length !== null) {
+            $position = $this->offset();
+            $max = $this->_start + $this->_length;
+            $length = $max - $position;
+        }
+        if ($length === null) {
+            $length = $this->_bufferSize;
+        }
+        return $length;
     }
 
     /**
@@ -282,8 +373,9 @@ class Stream
     public function getLine($length = null, $ending = "\n")
     {
         $this->_readable();
-        if (null == $length) {
-            $length = $this->_bufferSize;
+        $length = $this->_bufferSize($length);
+        if ($length <= 0) {
+            return '';
         }
         $result = stream_get_line($this->_resource, $length, $ending);
         return $result === false ? '' : $result;
@@ -368,7 +460,8 @@ class Stream
     public function seek($offset, $whence = SEEK_SET)
     {
         $this->_seekable();
-        return fseek($this->_resource, $offset, $whence);
+        fseek($this->_resource, $offset, $whence);
+        return ftell($this->_resource);
     }
 
     /**
@@ -378,8 +471,31 @@ class Stream
      */
     public function rewind()
     {
-        $this->_seekable();
-        return rewind($this->_resource);
+        return $this->seek($this->_start);
+    }
+
+    /**
+     * Alias of rewind().
+     *
+     * @return Boolean
+     */
+    public function begin()
+    {
+        return $this->rewind();
+    }
+
+    /**
+     * Seeks to the end of the stream.
+     *
+     * @return Boolean
+     */
+    public function end()
+    {
+        if ($this->_length === null) {
+            return $this->seek(0, SEEK_END);
+        } else {
+            return $this->seek($this->_start + $this->_length);
+        }
     }
 
     /**
@@ -403,15 +519,12 @@ class Stream
             return -1;
         }
 
-        $start = ftell($this->_resource);
+        $old = $this->offset();
 
-        fseek($this->_resource, 0, SEEK_SET);
-        $begin = ftell($this->_resource);
+        $begin = $this->rewind();
+        $end = $this->end();
 
-        fseek($this->_resource, 0, SEEK_END);
-        $end = ftell($this->_resource);
-
-        fseek($this->_resource, $start, SEEK_SET);
+        $this->seek($old);
         return $end - $begin;
     }
 
@@ -423,7 +536,12 @@ class Stream
     public function eof()
     {
         $this->_readable();
-        return feof($this->_resource);
+        if ($this->_length === null) {
+            return feof($this->_resource);
+        }
+        $position = $this->offset();
+        $max = $this->_start + $this->_length;
+        return $position >= $max;
     }
 
     /**
