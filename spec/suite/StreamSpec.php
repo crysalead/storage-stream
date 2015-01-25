@@ -529,7 +529,6 @@ describe("Stream", function() {
             expect($actual)->toBe(6);
             $stream1->close();
 
-            $stream2->rewind();
             expect($stream2->read())->toBe('foobar');
             $stream2->close();
 

@@ -408,7 +408,9 @@ class Stream
      */
     public function pipe($stream)
     {
-        return stream_copy_to_stream($this->resource(), $stream->resource());
+        $result = stream_copy_to_stream($this->resource(), $stream->resource());
+        $stream->rewind();
+        return $result;
     }
 
     /**
