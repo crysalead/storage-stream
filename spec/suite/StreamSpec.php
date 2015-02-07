@@ -518,6 +518,57 @@ describe("Stream", function() {
 
     });
 
+    describe("->push()", function() {
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream(['data' => fopen('php://temp', 'w+')]);
+                $stream->close();
+                $stream->push('foo');
+            };
+
+            expect($closure)->toThrow(new StreamException('Cannot write on a closed stream.'));
+        });
+
+        it("throws an exception on a non writable stream", function() {
+
+            $closure = function() {
+                $stream = new Stream(['data' => fopen('php://temp', 'r')]);
+                $stream->push('foo');
+            };
+
+            expect($closure)->toThrow(new StreamException("~Cannot write on a non-writable stream~"));
+        });
+
+        it("writes data to the stream", function() {
+
+            $handle = fopen('php://temp', 'w+');
+            $stream = new Stream(['data' => $handle]);
+            $actual = $stream->push('foo');
+            expect($actual)->toBe(3);
+
+            expect($stream->read())->toBe('foo');
+            expect($stream->valid())->toBe(true);
+            $stream->close();
+
+        });
+
+        it("writes only a specified number of character", function() {
+
+            $handle = fopen('php://temp', 'w+');
+            $stream = new Stream(['data' => $handle]);
+            $actual = $stream->push('foo', 2);
+            expect($actual)->toBe(2);
+
+            expect($stream->read())->toBe('fo');
+            expect($stream->valid())->toBe(true);
+            $stream->close();
+
+        });
+
+    });
+
     describe("->pipe()", function() {
 
         it("pipes on stream to another", function() {

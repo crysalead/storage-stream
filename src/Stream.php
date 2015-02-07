@@ -401,6 +401,27 @@ class Stream
     }
 
     /**
+     * Pushes data to the stream. The difference with `write()` is that the position of the file pointer still unchanged.
+     *
+     * @param  string  $string The string that is to be written.
+     * @param  integer $length If the length argument is given, writing will stop after length bytes have
+     *                         been written or the end of string if reached, whichever comes first.
+     * @return integer         Number of bytes written
+     */
+    public function push($string, $length = null)
+    {
+        $this->_writable();
+        $offset = $this->offset();
+        if (null === $length) {
+            $result = fwrite($this->_resource, $string);
+        } else {
+            $result = fwrite($this->_resource, $string, $length);
+        }
+        $this->seek($offset);
+        return $result;
+    }
+
+    /**
      * Reads the content of this stream and write it to another stream.
      *
      * @param  instance $stream The destination stream to write to
