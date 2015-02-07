@@ -58,7 +58,6 @@ describe("Stream", function() {
 
         });
 
-
         it("returns the resource", function() {
 
             $handle = fopen('php://temp', 'r+');
