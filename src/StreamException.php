@@ -1,5 +1,5 @@
 <?php
-namespace storage\stream;
+namespace Lead\Storage\Stream;
 
 class StreamException extends \RuntimeException
 {

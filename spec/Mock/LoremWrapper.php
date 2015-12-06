@@ -1,5 +1,5 @@
 <?php
-namespace storage\stream\spec\mock;
+namespace Lead\Storage\Stream\Spec\Mock;
 
 class LoremWrapper
 {

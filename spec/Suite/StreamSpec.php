@@ -1,11 +1,11 @@
 <?php
-namespace storage\stream\spec\suite;
+namespace Lead\Storage\Stream\Spec\Suite;
 
-use dir\Dir;
-use storage\stream\Stream;
-use storage\stream\StreamException;
+use Lead\Dir\Dir;
+use Lead\Storage\Stream\Stream;
+use Lead\Storage\Stream\StreamException;
 
-use kahlan\plugin\Stub;
+use Kahlan\Plugin\Stub;
 
 describe("Stream", function() {
 
@@ -21,7 +21,7 @@ describe("Stream", function() {
     beforeEach(function() {
         $this->temp = Dir::tempnam(sys_get_temp_dir(), 'spec');
         $this->filename = tempnam($this->temp, 'foo');
-        stream_wrapper_register('lorem', 'storage\stream\spec\mock\LoremWrapper');
+        stream_wrapper_register('lorem', 'Lead\Storage\Stream\Spec\Mock\LoremWrapper');
     });
 
     afterEach(function() {
@@ -37,6 +37,7 @@ describe("Stream", function() {
             expect($stream->read(5))->toBe('Hello');
             expect($stream->read())->toBe('World');
             expect($stream->valid())->toBe(true);
+            skipIf(!defined('HHVM_VERSION')); // Skip for PHP since https://bugs.php.net/bug.php?id=68948
             expect($stream->eof())->toBe(true);
             $stream->close();
 
@@ -799,6 +800,7 @@ describe("Stream", function() {
 
             $stream = new Stream(['data' => 'foobar']);
             $stream->read();
+            skipIf(!defined('HHVM_VERSION')); // Skip for PHP since https://bugs.php.net/bug.php?id=68948
             expect($stream->eof())->toBe(true);
             $stream->close();
 
@@ -989,7 +991,7 @@ describe("Stream", function() {
         it("returns the plain text mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/helloworld.txt', 'r+'),
+                'data' => fopen('spec/Fixture/helloworld.txt', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('text/plain');
@@ -1000,7 +1002,7 @@ describe("Stream", function() {
         it("returns the odt mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/helloworld.odt', 'r+'),
+                'data' => fopen('spec/Fixture/helloworld.odt', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('application/vnd.oasis.opendocument.text');
@@ -1011,7 +1013,7 @@ describe("Stream", function() {
         it("returns the gzip mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/helloworld.txt.gz', 'r+'),
+                'data' => fopen('spec/Fixture/helloworld.txt.gz', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('application/x-gzip');
@@ -1022,7 +1024,7 @@ describe("Stream", function() {
         it("returns the tar mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/helloworld.tar', 'r+'),
+                'data' => fopen('spec/Fixture/helloworld.tar', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('application/x-tar');
@@ -1033,7 +1035,7 @@ describe("Stream", function() {
         it("returns the jpg mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/favicon.jpg', 'r+'),
+                'data' => fopen('spec/Fixture/favicon.jpg', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('image/jpeg');
@@ -1044,7 +1046,7 @@ describe("Stream", function() {
         it("returns the png mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/favicon.png', 'r+'),
+                'data' => fopen('spec/Fixture/favicon.png', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('image/png');
@@ -1055,9 +1057,10 @@ describe("Stream", function() {
         it("returns the gif mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/favicon.gif', 'r+'),
+                'data' => fopen('spec/Fixture/favicon.gif', 'r+'),
                 'mime' => true
             ]);
+            skipIf(version_compare(PHP_VERSION, '5.6.6', '<')); // Skip for PHP since https://bugs.php.net/bug.php?id=67647
             expect($stream->mime())->toBe('image/gif');
             $stream->close();
 
@@ -1066,7 +1069,7 @@ describe("Stream", function() {
         it("returns the wav mime", function() {
 
             $stream = new Stream([
-                'data' => fopen('spec/fixture/sound.wav', 'r+'),
+                'data' => fopen('spec/Fixture/sound.wav', 'r+'),
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('audio/x-wav');
