@@ -32,11 +32,11 @@ class Stream
     protected $_start = 0;
 
     /**
-     * The range length.
+     * The range limit.
      *
      * @var integer
      */
-    protected $_length = null;
+    protected $_limit = null;
 
     /**
      * The timeout in microseconds
@@ -59,7 +59,7 @@ class Stream
             'data'       => '',
             'mime'       => null,
             'start'      => 0,
-            'length'     => null,
+            'limit'      => null,
             'bufferSize' => 4096
         ];
         $config += $defaults;
@@ -78,7 +78,7 @@ class Stream
         $this->_resource = $resource;
         $this->_bufferSize = $config['bufferSize'];
         $this->_start = $config['start'];
-        $this->_length = $config['length'];
+        $this->_limit = $config['limit'];
         $this->_mime = $this->_getMime($config['mime']);
         if ($this->_start > 0) {
             $this->rewind();
@@ -160,17 +160,17 @@ class Stream
     }
 
     /**
-     * Gets/sets the stream range length.
+     * Gets/sets the stream range limit.
      *
-     * @param  integer $length The length to set.
-     * @return string          The setted length.
+     * @param  integer $limit The limit to set.
+     * @return string          The setted limit.
      */
-    public function length($length = null)
+    public function limit($limit = null)
     {
         if (func_num_args() === 0) {
-            return $this->_length;
+            return $this->_limit;
         }
-        return $this->_length = $length;
+        return $this->_limit = $limit;
     }
 
     /**
@@ -184,9 +184,9 @@ class Stream
         if (func_num_args() === 1) {
             $values = explode('-', $range);
             $this->_start = (integer) $values[0];
-            $this->_length = $values[1] !== '' ? $values[1] - $values[0] : null;
+            $this->_limit = $values[1] !== '' ? $values[1] - $values[0] : null;
         }
-        return $this->_start . '-' . ($this->_length ? $this->_start + $this->_length : '');
+        return $this->_start . '-' . ($this->_limit ? $this->_start + $this->_limit : '');
     }
 
     /**
@@ -352,9 +352,9 @@ class Stream
      */
     protected function _bufferSize($length)
     {
-        if ($this->_length !== null) {
+        if ($this->_limit !== null) {
             $position = $this->offset();
-            $max = $this->_start + $this->_length;
+            $max = $this->_start + $this->_limit;
             $length = $max - $position;
         }
         if ($length === null) {
@@ -514,10 +514,10 @@ class Stream
      */
     public function end()
     {
-        if ($this->_length === null) {
+        if ($this->_limit === null) {
             return $this->seek(0, SEEK_END);
         } else {
-            return $this->seek($this->_start + $this->_length);
+            return $this->seek($this->_start + $this->_limit);
         }
     }
 
@@ -559,11 +559,11 @@ class Stream
     public function eof()
     {
         $this->_readable();
-        if ($this->_length === null) {
+        if ($this->_limit === null) {
             return feof($this->_resource);
         }
         $position = $this->offset();
-        $max = $this->_start + $this->_length;
+        $max = $this->_start + $this->_limit;
         return $position >= $max;
     }
 

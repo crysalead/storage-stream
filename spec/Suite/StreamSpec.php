@@ -84,14 +84,14 @@ describe("Stream", function() {
 
     });
 
-    describe("->length()", function() {
+    describe("->limit()", function() {
 
-        it("get/sets the stream length", function() {
+        it("get/sets the stream limit", function() {
             $stream = new Stream(['data' => 'foo bar']);
-            expect($stream->length())->toBe(null);
+            expect($stream->limit())->toBe(null);
 
-            expect($stream->length(3))->toBe(3);
-            expect($stream->length())->toBe(3);
+            expect($stream->limit(3))->toBe(3);
+            expect($stream->limit())->toBe(3);
             $stream->close();
 
         });
@@ -106,11 +106,11 @@ describe("Stream", function() {
 
             expect($stream->range('3-'))->toBe('3-');
             expect($stream->start())->toBe(3);
-            expect($stream->length())->toBe(null);
+            expect($stream->limit())->toBe(null);
 
             expect($stream->range('1-3'))->toBe('1-3');
             expect($stream->start())->toBe(1);
-            expect($stream->length())->toBe(2);
+            expect($stream->limit())->toBe(2);
 
             $stream->close();
 
@@ -320,9 +320,9 @@ describe("Stream", function() {
         it("reads according a setted range", function() {
 
             $stream = new Stream([
-                'data'   => 'foo bar baz',
-                'start'  => 4,
-                'length' => 3
+                'data'  => 'foo bar baz',
+                'start' => 4,
+                'limit' => 3
             ]);
             expect($stream->read())->toBe('bar');
             expect($stream->read())->toBe('');
@@ -442,9 +442,9 @@ describe("Stream", function() {
         it("reads according a setted range", function() {
 
             $stream = new Stream([
-                'data'   => "foo\nbar\nbaz",
-                'start'  => 4,
-                'length' => 3
+                'data'  => "foo\nbar\nbaz",
+                'start' => 4,
+                'limit' => 3
             ]);
             expect($stream->getLine())->toBe('bar');
             expect($stream->getLine())->toBe('');
@@ -679,9 +679,9 @@ describe("Stream", function() {
         it("rewinds a stream according the range constraint", function() {
 
             $stream = new Stream([
-                'data'   => 'foo bar baz',
-                'start'  => 4,
-                'length' => 3
+                'data'  => 'foo bar baz',
+                'start' => 4,
+                'limit' => 3
             ]);
 
             expect($stream->read())->toBe('bar');
@@ -727,9 +727,9 @@ describe("Stream", function() {
         it("seeks to the end of the stream according the range constraint", function() {
 
             $stream = new Stream([
-                'data'   => 'foo bar baz',
-                'start'  => 4,
-                'length' => 3
+                'data'  => 'foo bar baz',
+                'start' => 4,
+                'limit' => 3
             ]);
 
             expect($stream->end())->toBe(7);
