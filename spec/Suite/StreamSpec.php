@@ -869,28 +869,57 @@ describe("Stream", function() {
 
     });
 
-    describe("->size()", function() {
+    describe("->length()", function() {
 
-        it("returns -1 if the stream in not seekable.", function() {
+        it("returns manualy setted length by default.", function() {
+
+            $stream = new Stream([
+                'data'   => 'foobar',
+                'length' => 12
+            ]);
+
+            expect($stream->length())->toBe(12);
+            $stream->rewind();
+
+            expect($stream->length())->toBe(12);
+            $stream->close();
+        });
+
+        it("returns the length of the stream.", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream->length())->toBe(6);
+            $stream->rewind();
+
+            expect($stream->length())->toBe(6);
+            $stream->close();
+        });
+
+        it("returns the range limit when set.", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream->length())->toBe(6);
+            expect($stream->range('1-3'))->toBe('1-3');
+            expect($stream->length())->toBe(2);
+
+            expect($stream->range('0-'))->toBe('0-');
+            expect($stream->length())->toBe(6);
+
+        });
+
+        it("returns `null` if the stream in not seekable.", function() {
 
             $handle = fopen('php://output', 'r');
             $stream = new Stream(['data' => $handle]);
 
-            expect($stream->size())->toBe(-1);
+            expect($stream->length())->toBe(null);
             $stream->close();
 
         });
 
-        it("returns the size of the stream.", function() {
 
-            $stream = new Stream(['data' => 'foobar']);
-
-            expect($stream->size())->toBe(6);
-            $stream->rewind();
-
-            expect($stream->size())->toBe(6);
-            $stream->close();
-        });
 
     });
 

@@ -39,6 +39,13 @@ class Stream
     protected $_limit = null;
 
     /**
+     * The stream length.
+     *
+     * @var integer
+     */
+    protected $_length = null;
+
+    /**
      * The timeout in microseconds
      *
      * @var integer
@@ -60,6 +67,7 @@ class Stream
             'mime'       => null,
             'start'      => 0,
             'limit'      => null,
+            'length'     => null,
             'bufferSize' => 4096
         ];
         $config += $defaults;
@@ -79,6 +87,7 @@ class Stream
         $this->_bufferSize = $config['bufferSize'];
         $this->_start = $config['start'];
         $this->_limit = $config['limit'];
+        $this->_length = $config['length'];
         $this->_mime = $this->_getMime($config['mime']);
         if ($this->_start > 0) {
             $this->rewind();
@@ -171,6 +180,28 @@ class Stream
             return $this->_limit;
         }
         return $this->_limit = $limit;
+    }
+
+    /**
+     * Gets the stream range length.
+     */
+    public function length()
+    {
+        if ($this->_limit !== null) {
+            return $this->_limit;
+        }
+        if ($this->_length !== null) {
+            return $this->_length;
+        }
+        if ($this->seekable()) {
+            $old = $this->offset();
+
+            $begin = $this->rewind();
+            $end = $this->end();
+
+            $this->seek($old);
+            return $end - $begin;
+        }
     }
 
     /**
@@ -529,26 +560,6 @@ class Stream
     public function valid()
     {
         return !!$this->_resource && is_resource($this->_resource);
-    }
-
-    /**
-     * Returns the stream size.
-     *
-     * @return integer
-     */
-    public function size()
-    {
-        if (!$this->seekable()) {
-            return -1;
-        }
-
-        $old = $this->offset();
-
-        $begin = $this->rewind();
-        $end = $this->end();
-
-        $this->seek($old);
-        return $end - $begin;
     }
 
     /**
