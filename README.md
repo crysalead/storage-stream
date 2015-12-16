@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/crysalead/storage-stream.png?branch=master)](https://travis-ci.org/crysalead/storage-stream)
 [![Code Coverage](https://scrutinizer-ci.com/g/crysalead/storage-stream/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/crysalead/storage-stream/)
 
-Streamer is an Object-Oriented API for PHP streams (PSR-7 compatible).
+Object-Oriented API for PHP streams (PSR-7 compatible).
 
 ## Installation
 
