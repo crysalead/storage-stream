@@ -43,6 +43,18 @@ describe("Stream", function() {
 
         });
 
+        it("allows a non array as constructor", function() {
+
+            $stream = new Stream('HelloWorld');
+            expect($stream->read(5))->toBe('Hello');
+            expect($stream->read())->toBe('World');
+            expect($stream->valid())->toBe(true);
+            skipIf(!defined('HHVM_VERSION')); // Skip for PHP since https://bugs.php.net/bug.php?id=68948
+            expect($stream->eof())->toBe(true);
+            $stream->close();
+
+        });
+
     });
 
     describe("->resource()", function() {
@@ -50,7 +62,7 @@ describe("Stream", function() {
         it("throws an exception if the passed resource is not a valid resource", function() {
 
             $closure = function() {
-                $stream = new Stream(['resource' => []]);
+                $stream = new Stream(['data' => []]);
                 Stub::on($stream)->method('valid')->andReturn(false);
                 $stream->resource();
             };
@@ -128,8 +140,8 @@ describe("Stream", function() {
             expect($meta['uri'])->toBe('php://temp');
             expect($meta['wrapper_type'])->toBe('PHP');
             expect($meta['stream_type'])->toBe('TEMP');
-            expect($stream->readable())->toBe(true);
-            expect($stream->writable())->toBe(true);
+            expect($stream->isReadable())->toBe(true);
+            expect($stream->isWritable())->toBe(true);
             expect($meta['unread_bytes'])->toBe(0);
             expect($meta['seekable'])->toBe(true);
             $stream->close();
@@ -154,6 +166,20 @@ describe("Stream", function() {
 
     });
 
+    describe("->getMetadata()", function() {
+
+        it("delegates to `->meta()`", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream)->toReceive('meta')->with('mode');
+
+            $stream->getMetadata('mode');
+
+        });
+
+    });
+
     describe("->isLocal()", function() {
 
         it("returns `true` if the stream is a local stream", function() {
@@ -166,7 +192,7 @@ describe("Stream", function() {
 
     });
 
-    describe("->readable()", function() {
+    describe("->isReadable()", function() {
 
         it("returns `true` if the stream is readable", function() {
 
@@ -175,7 +201,7 @@ describe("Stream", function() {
                     $this->filename .= 'bar';
                 }
                 $stream = new Stream(['data' => fopen('file://' . $this->filename, $mode)]);
-                expect($stream->readable())->toBe(true);
+                expect($stream->isReadable())->toBe(true);
                 $stream->close();
             };
 
@@ -188,7 +214,7 @@ describe("Stream", function() {
                     $this->filename .= 'bar';
                 }
                 $stream = new Stream(['data' => fopen('file://' . $this->filename, $mode)]);
-                expect($stream->readable())->toBe(false);
+                expect($stream->isReadable())->toBe(false);
                 $stream->close();
             };
 
@@ -196,7 +222,7 @@ describe("Stream", function() {
 
     });
 
-    describe("->writable()", function() {
+    describe("->isWritable()", function() {
 
         it("returns `true` if the stream is writable", function() {
 
@@ -205,7 +231,7 @@ describe("Stream", function() {
                     $this->filename .= 'bar';
                 }
                 $stream = new Stream(['data' => fopen('file://' . $this->filename, $mode)]);
-                expect($stream->writable())->toBe(true);
+                expect($stream->isWritable())->toBe(true);
                 $stream->close();
             };
 
@@ -214,19 +240,19 @@ describe("Stream", function() {
         it("returns `false` if the stream is not writable", function() {
 
             $stream = new Stream(['data' => fopen('file://' . $this->filename, 'r')]);
-            expect($stream->writable())->toBe(false);
+            expect($stream->isWritable())->toBe(false);
             $stream->close();
 
         });
 
     });
 
-    describe("->seekable()", function() {
+    describe("->isSeekable()", function() {
 
         it("returns `true` if the stream is seekable", function() {
 
             $stream = new Stream(['data' => fopen('file://' . $this->filename, 'r')]);
-            expect($stream->seekable())->toBe(true);
+            expect($stream->isSeekable())->toBe(true);
             $stream->close();
 
         });
@@ -234,7 +260,7 @@ describe("Stream", function() {
         it("returns `false` if the stream is not seekable", function() {
 
             $stream = new Stream(['data' => fopen('php://output', 'r')]);
-            expect($stream->seekable())->toBe(false);
+            expect($stream->isSeekable())->toBe(false);
             $stream->close();
 
         });
@@ -742,13 +768,13 @@ describe("Stream", function() {
 
     });
 
-    describe("->offset()", function() {
+    describe("->tell()", function() {
 
         it("seeks to a specified position", function() {
 
             $stream = new Stream(['data' => 'foobar']);
             $stream->seek(3);
-            expect($stream->offset())->toBe(3);
+            expect($stream->tell())->toBe(3);
             $stream->close();
 
         });
@@ -808,7 +834,7 @@ describe("Stream", function() {
 
     });
 
-    describe("->__toString()", function() {
+    describe("->toString()", function() {
 
         it("reads the remaining data from the stream", function() {
 
@@ -835,9 +861,10 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
             expect($stream->read(3))->toBe('foo');
-            expect((string) $stream)->toBe('bar');
-            expect((string) $stream)->toBe('bar');
-            expect((string) $stream)->toBe('bar');
+            expect((string) $stream)->toBe('foobar');
+            expect((string) $stream)->toBe('foobar');
+            expect((string) $stream)->toBe('foobar');
+            expect($stream->read(3))->toBe('bar');
             $stream->close();
 
         });
@@ -846,11 +873,53 @@ describe("Stream", function() {
 
             $stream = new Stream(['data' => 'foobar']);
 
-            Stub::on($stream)->method('seekable')->andReturn(false);
+            Stub::on($stream)->method('isSeekable')->andReturn(false);
 
             expect((string) $stream)->toBe('foobar');
             expect((string) $stream)->toBe('');
             $stream->close();
+
+        });
+
+    });
+
+    describe("->__toString()", function() {
+
+        it("delegates to `->toString()`", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream)->toReceive('toString');
+
+            (string) $stream;
+
+        });
+
+    });
+
+    describe("->getContents()", function() {
+
+        it("delegates to `->flush()`", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream)->toReceive('flush');
+
+            $stream->getContents();
+
+        });
+
+    });
+
+    describe("->detaches()", function() {
+
+        it("detaches the stream", function() {
+
+            $file = fopen('php://output', 'r');
+            $stream = new Stream(['data' => $file]);
+            expect($stream->detach())->toBe($file);
+            expect($stream->valid())->toBe(false);
+            expect($stream->close())->toBe(false);
 
         });
 
@@ -919,7 +988,19 @@ describe("Stream", function() {
 
         });
 
+    });
 
+    describe("->getSize()", function() {
+
+        it("delegates to `->length()`", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            expect($stream)->toReceive('length');
+
+            $stream->getSize();
+
+        });
 
     });
 

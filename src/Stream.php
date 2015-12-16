@@ -1,7 +1,7 @@
 <?php
 namespace Lead\Storage\Stream;
 
-class Stream
+class Stream implements \Psr\Http\Message\StreamInterface
 {
     /**
      * The stream resource.
@@ -70,6 +70,9 @@ class Stream
             'length'     => null,
             'bufferSize' => 4096
         ];
+        if (!is_array($config)) {
+            $config = ['data' => $config];
+        }
         $config += $defaults;
 
         if (is_resource($config['data'])) {
@@ -110,7 +113,7 @@ class Stream
         if (is_string($mime)) {
             return $mime;
         }
-        if (!$mime || !$this->seekable() || !$this->readable()) {
+        if (!$mime || !$this->isSeekable() || !$this->isReadable()) {
             return 'application/octet-stream';
         }
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -193,8 +196,8 @@ class Stream
         if ($this->_length !== null) {
             return $this->_length;
         }
-        if ($this->seekable()) {
-            $old = $this->offset();
+        if ($this->isSeekable()) {
+            $old = $this->tell();
 
             $begin = $this->rewind();
             $end = $this->end();
@@ -235,7 +238,7 @@ class Stream
     }
 
     /**
-     * Get steam meta data.
+     * Gets stream meta data.
      *
      * @param  string $key A specific meta data or `null` to get all meta data.
      *                     Possibles values are:
@@ -275,7 +278,7 @@ class Stream
      *
      * @return boolean
      */
-    public function readable()
+    public function isReadable()
     {
         $mode = $this->meta('mode');
         return $mode[0] === 'r' || strpos($mode, '+');
@@ -284,12 +287,12 @@ class Stream
     /**
      * Throws an exception if a stream is not readable.
      */
-    protected function _readable()
+    protected function _ensureReadable()
     {
         if (!$this->valid()) {
             throw new StreamException('Cannot read from a closed stream.');
         }
-        if (!$this->readable()) {
+        if (!$this->isReadable()) {
             $mode = $this->meta('mode');
             throw new StreamException("Cannot read on a non-readable stream (mode is `'{$mode}'`).");
         }
@@ -300,7 +303,7 @@ class Stream
      *
      * @return boolean
      */
-    public function writable()
+    public function isWritable()
     {
         $mode = $this->meta('mode');
         return $mode[0] !== 'r' || strpos($mode, '+');
@@ -309,12 +312,12 @@ class Stream
     /**
      * Throws an exception if a stream is not writable.
      */
-    protected function _writable()
+    protected function _ensureWritable()
     {
         if (!$this->valid()) {
             throw new StreamException('Cannot write on a closed stream.');
         }
-        if (!$this->writable()) {
+        if (!$this->isWritable()) {
             $mode = $this->meta('mode');
             throw new StreamException("Cannot write on a non-writable stream (mode is `'{$mode}'`).");
         }
@@ -325,7 +328,7 @@ class Stream
      *
      * @return boolean
      */
-    public function seekable()
+    public function isSeekable()
     {
         return $this->meta('seekable');
     }
@@ -333,12 +336,12 @@ class Stream
     /**
      * Throws an exception if a stream is not seekable.
      */
-    protected function _seekable()
+    protected function _ensureSeekable()
     {
         if (!$this->valid()) {
             throw new StreamException('Cannot seek on a closed stream.');
         }
-        if (!$this->seekable()) {
+        if (!$this->isSeekable()) {
             throw new StreamException('Cannot seek on a non-seekable stream.');
         }
     }
@@ -366,7 +369,7 @@ class Stream
      */
     public function read($length = null)
     {
-        $this->_readable();
+        $this->_ensureReadable();
         $length = $this->_bufferSize($length);
         if ($length <= 0) {
             return '';
@@ -384,7 +387,7 @@ class Stream
     protected function _bufferSize($length)
     {
         if ($this->_limit !== null) {
-            $position = $this->offset();
+            $position = $this->tell();
             $max = $this->_start + $this->_limit;
             $length = $max - $position;
         }
@@ -403,7 +406,7 @@ class Stream
      */
     public function getLine($length = null, $ending = "\n")
     {
-        $this->_readable();
+        $this->_ensureReadable();
         $length = $this->_bufferSize($length);
         if ($length <= 0) {
             return '';
@@ -422,7 +425,7 @@ class Stream
      */
     public function write($string, $length = null)
     {
-        $this->_writable();
+        $this->_ensureWritable();
         if (null === $length) {
             $result = fwrite($this->_resource, $string);
         } else {
@@ -441,8 +444,8 @@ class Stream
      */
     public function push($string, $length = null)
     {
-        $this->_writable();
-        $offset = $this->offset();
+        $this->_ensureWritable();
+        $offset = $this->tell();
         if (null === $length) {
             $result = fwrite($this->_resource, $string);
         } else {
@@ -460,8 +463,11 @@ class Stream
      */
     public function pipe($stream)
     {
+        $offset = $stream->tell();
         $result = stream_copy_to_stream($this->resource(), $stream->resource());
-        $stream->rewind();
+        if ($stream->isSeekable()) {
+            $stream->seek($offset);
+        }
         return $result;
     }
 
@@ -472,7 +478,7 @@ class Stream
      */
     public function flush()
     {
-        $this->_readable();
+        $this->_ensureReadable();
         return stream_get_contents($this->_resource);
     }
 
@@ -497,7 +503,7 @@ class Stream
      *
      * @return integer
      */
-    public function offset()
+    public function tell()
     {
         return ftell($this->_resource);
     }
@@ -513,7 +519,7 @@ class Stream
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        $this->_seekable();
+        $this->_ensureSeekable();
         fseek($this->_resource, $offset, $whence);
         return ftell($this->_resource);
     }
@@ -569,11 +575,11 @@ class Stream
      */
     public function eof()
     {
-        $this->_readable();
+        $this->_ensureReadable();
         if ($this->_limit === null) {
             return feof($this->_resource);
         }
-        $position = $this->offset();
+        $position = $this->tell();
         $max = $this->_start + $this->_limit;
         return $position >= $max;
     }
@@ -583,14 +589,26 @@ class Stream
      *
      * @return string
      */
-    public function __toString() {
-        if (!$this->seekable()) {
+    public function toString()
+    {
+        if (!$this->isSeekable()) {
             return $this->flush();
         }
-        $old = $this->offset();
+        $old = $this->tell();
+        $this->rewind();
         $result = $this->flush();
         $this->seek($old);
         return $result;
+    }
+
+    /**
+     * Detaches the stream
+     */
+    public function detach()
+    {
+        $resource = $this->_resource;
+        $this->_resource = null;
+        return $resource;
     }
 
     /**
@@ -598,13 +616,21 @@ class Stream
      */
     public function close()
     {
-        if (!is_resource($this->_resource)) {
+        $resource = $this->detach();
+        if (!is_resource($resource)) {
             return false;
         }
-        if ($result = fclose($this->_resource)) {
-            $this->_resource = null;
-        }
-        return $result;
+        return fclose($resource);
+    }
+
+    /**
+     * Returns the remaining data from the stream (same as flush).
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->toString();
     }
 
     /**
@@ -613,5 +639,23 @@ class Stream
     public function __destruct()
     {
         $this->close();
+    }
+
+    /**
+     * PSR-7 aliases
+     */
+    public function getSize()
+    {
+        return $this->length();
+    }
+
+    public function getContents()
+    {
+        return $this->flush();
+    }
+
+    public function getMetadata($key = null)
+    {
+        return $this->meta($key);
     }
 }
