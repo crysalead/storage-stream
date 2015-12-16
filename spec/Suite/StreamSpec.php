@@ -166,20 +166,6 @@ describe("Stream", function() {
 
     });
 
-    describe("->getMetadata()", function() {
-
-        it("delegates to `->meta()`", function() {
-
-            $stream = new Stream(['data' => 'foobar']);
-
-            expect($stream)->toReceive('meta')->with('mode');
-
-            $stream->getMetadata('mode');
-
-        });
-
-    });
-
     describe("->isLocal()", function() {
 
         it("returns `true` if the stream is a local stream", function() {
@@ -897,20 +883,6 @@ describe("Stream", function() {
 
     });
 
-    describe("->getContents()", function() {
-
-        it("delegates to `->flush()`", function() {
-
-            $stream = new Stream(['data' => 'foobar']);
-
-            expect($stream)->toReceive('flush');
-
-            $stream->getContents();
-
-        });
-
-    });
-
     describe("->detaches()", function() {
 
         it("detaches the stream", function() {
@@ -985,20 +957,6 @@ describe("Stream", function() {
 
             expect($stream->length())->toBe(null);
             $stream->close();
-
-        });
-
-    });
-
-    describe("->getSize()", function() {
-
-        it("delegates to `->length()`", function() {
-
-            $stream = new Stream(['data' => 'foobar']);
-
-            expect($stream)->toReceive('length');
-
-            $stream->getSize();
 
         });
 

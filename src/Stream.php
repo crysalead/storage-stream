@@ -3,6 +3,8 @@ namespace Lead\Storage\Stream;
 
 class Stream implements \Psr\Http\Message\StreamInterface
 {
+    use Psr7\StreamTrait;
+
     /**
      * The stream resource.
      *
@@ -639,23 +641,5 @@ class Stream implements \Psr\Http\Message\StreamInterface
     public function __destruct()
     {
         $this->close();
-    }
-
-    /**
-     * PSR-7 aliases
-     */
-    public function getSize()
-    {
-        return $this->length();
-    }
-
-    public function getContents()
-    {
-        return $this->flush();
-    }
-
-    public function getMetadata($key = null)
-    {
-        return $this->meta($key);
     }
 }
