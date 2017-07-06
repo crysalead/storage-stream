@@ -119,7 +119,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
         $begin = ftell($this->_resource);
-        fseek($this->_resource, 0, SEEK_END);
+        $this->seek(0, SEEK_END);
         $end = ftell($this->_resource);
 
         $size = min($end - $begin, 4);
@@ -127,13 +127,13 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return 'application/octet-stream';
         }
 
-        fseek($this->_resource, $size, SEEK_SET);
+        $this->seek($size, SEEK_SET);
         $signature = fread($this->_resource, $size);
 
         $size = min($end - $begin, 1024);
-        fseek($this->_resource, $begin, SEEK_SET);
+        $this->seek($begin, SEEK_SET);
         $signature = fread($this->_resource, $size) . $signature;
-        fseek($this->_resource, $begin, SEEK_SET);
+        $this->seek($begin, SEEK_SET);
 
         return finfo_buffer($finfo, $signature);
     }
