@@ -15,13 +15,6 @@ class MultipartStream extends MultiStream
     protected $_boundary;
 
     /**
-     * Indicate if the last stream must be keept at the last position.
-     *
-     * @return boolean
-     */
-    protected $_keepLast = true;
-
-    /**
      * The constructor
      *
      * @param array $config The configuration array. Possibles values are:
@@ -30,7 +23,8 @@ class MultipartStream extends MultiStream
     public function __construct($config = [])
     {
         $defaults = [
-            'boundary' => null
+            'boundary' => null,
+            'keepLast' => true
         ];
         $config += $defaults;
         $this->_boundary = isset($config['boundary']) ? $config['boundary'] : sha1(uniqid('', true));

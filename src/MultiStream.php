@@ -63,10 +63,12 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function __construct($config = [])
     {
         $defaults = [
-            'bufferSize' => 4096
+            'bufferSize' => 4096,
+            'keepLast' => false
         ];
         $config += $defaults;
         $this->_bufferSize = $config['bufferSize'];
+        $this->_keepLast = $config['keepLast'];
     }
 
     /**
