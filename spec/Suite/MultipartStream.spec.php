@@ -68,12 +68,12 @@ describe("MultipartStream", function() {
             $expected = <<<EOD
 --boundary\r
 Content-Disposition: form-data; name="foo"\r
-Content-Type: application/octet-stream\r
+Content-Type: text/plain\r
 Content-Length: 3\r
 \r\nbar\r
 --boundary\r
 Content-Disposition: form-data; name="baz"\r
-Content-Type: application/octet-stream\r
+Content-Type: text/plain\r
 Content-Length: 3\r
 \r
 bam\r
@@ -113,7 +113,7 @@ Content-Length: 1\r
 1\r
 --boundary\r
 Content-Disposition: form-data; name="float"\r
-Content-Type: application/octet-stream\r
+Content-Type: text/plain\r
 Content-Length: 3\r
 \r
 1.1\r

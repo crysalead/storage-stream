@@ -76,7 +76,7 @@ class MultipartStream extends MultiStream
             'filename'    => null,
             'length'      => null,
             'disposition' => 'form-data', // For emails 'attachement' or 'inline' can be usefull
-            'mime'        => null
+            'mime'        => true
         ];
 
         $options += $defaults;
