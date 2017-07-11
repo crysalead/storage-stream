@@ -42,6 +42,66 @@ describe("MultipartStream", function() {
 
     describe("->add()", function() {
 
+        it("overwrites mime", function() {
+
+            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
+            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'mime' => 'image/png']);
+
+            $expected = <<<EOD
+--boundary\r
+Content-Disposition: form-data; name="foo"\r
+Content-Type: image/png\r
+Content-Length: 3\r
+\r
+bar\r
+--boundary--\r
+
+EOD;
+            expect($multipartStream->toString())->toBe($expected);
+
+        });
+
+        it("add custom headers", function() {
+
+            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
+            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'headers' => [
+                'x-foo: "bar"'
+            ]]);
+
+            $expected = <<<EOD
+--boundary\r
+x-foo: "bar"\r
+Content-Disposition: form-data; name="foo"\r
+Content-Type: text/plain\r
+Content-Length: 3\r
+\r
+bar\r
+--boundary--\r
+
+EOD;
+            expect($multipartStream->toString())->toBe($expected);
+
+        });
+
+        it("overwrites disposition", function() {
+
+            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
+            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'disposition' => 'attachment']);
+
+            $expected = <<<EOD
+--boundary\r
+Content-Disposition: attachment; name="foo"\r
+Content-Type: text/plain\r
+Content-Length: 3\r
+\r
+bar\r
+--boundary--\r
+
+EOD;
+            expect($multipartStream->toString())->toBe($expected);
+
+        });
+
         it("throws an exception if the `'name'` option is empty", function() {
 
             $closure = function() {

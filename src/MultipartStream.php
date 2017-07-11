@@ -70,7 +70,8 @@ class MultipartStream extends MultiStream
             'filename'    => null,
             'length'      => null,
             'disposition' => 'form-data', // For emails 'attachement' or 'inline' can be usefull
-            'mime'        => true
+            'mime'        => true,
+            'headers'     => []
         ];
 
         $options += $defaults;
@@ -91,6 +92,7 @@ class MultipartStream extends MultiStream
             $parts[] = "filename=\"{$options['filename']}\"";
         }
 
+        $headers = $options['headers'];
         $headers[] = "Content-Disposition: " . join('; ', $parts);
         $headers[] = "Content-Type: {$mime}";
         if ($length) {
