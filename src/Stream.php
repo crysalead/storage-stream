@@ -3,12 +3,28 @@ namespace Lead\Storage\Stream;
 
 class Stream implements \Psr\Http\Message\StreamInterface
 {
+    use Psr7\StreamTrait;
+
     /**
      * The stream resource.
      *
      * @var resource
      */
     protected $_resource = null;
+
+    /**
+     * The filename of the resource
+     *
+     * @var string
+     */
+    protected $_filename = null;
+
+    /**
+     * The open mode of the filename resource;
+     *
+     * @var string
+     */
+    protected $_mode = 'r+';
 
     /**
      * The mime info.
@@ -57,13 +73,17 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @param array $config The configuration array. Possibles values are:
      *                      -`data`       _mixed_  : a data string or a stream resource.
+     *                      -`filename`   _mixed_  : a filename.
+     *                      -`mode`       _string_ : the type of access required for this stream.
      *                      -`mime`       _mixed_  : a mime string or `true` for an auto detection.
      *                      -`bufferSize` _interger: number of bytes to read on read by defaults.
      */
     public function __construct($config = [])
     {
         $defaults = [
-            'data'       => '',
+            'data'       => null,
+            'filename'   => null,
+            'mode'       => 'r+',
             'mime'       => null,
             'start'      => 0,
             'limit'      => null,
@@ -75,71 +95,49 @@ class Stream implements \Psr\Http\Message\StreamInterface
         }
         $config += $defaults;
 
-        if (is_resource($config['data'])) {
-            $resource = $config['data'];
-        } else {
-            $stream = fopen('php://temp', 'r+');
-            if ($config['data']) {
-                fwrite($stream, $config['data']);
-                rewind($stream);
-            }
-            $resource = $stream;
-        }
+        $this->_initResource($config);
 
-        $this->_resource = $resource;
         $this->_bufferSize = $config['bufferSize'];
         $this->_start = $config['start'];
         $this->_limit = $config['limit'];
         $this->_length = $config['length'];
-        $this->_mime = $this->_getMime($config['mime']);
+        $this->_mime = static::getMime($this, $config['mime']);
         if ($this->_start > 0) {
             $this->rewind();
         }
     }
 
     /**
-     * Mime detector.
-     * Concat the first 1024 bytes + the last 4 bytes of readable & seekable streams
-     * to detext the mime info.
+     * Init the stream resource.
      *
-     * @param  string $mime The mime type detection. Possible values are:
-     *                      -`true`    : auto detect the mime.
-     *                      - a string : don't detect the mime and use the passed string instead.
-     *                      -`false`   : don't detect the mime.
-     * @return string       The detected mime.
+     * @param array $config The constructor configuration array.
      */
-    protected function _getMime($mime)
+    protected function _initResource($config)
     {
-        if (is_string($mime)) {
-            return $mime;
+        if (isset($config['data']) && isset($config['filename'])) {
+            throw new StreamException("Error, `'data'` or `'filename'` option must be defined.");
         }
-        if (!$mime || !$this->isSeekable() || !$this->isReadable()) {
-            return 'application/octet-stream';
+        if ($config['filename']) {
+            $this->_filename = $config['filename'];
+            if ($this->_filename === 'php://input') {
+                $this->_mode = 'r';
+            }
+            return;
         }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-
-        $begin = ftell($this->_resource);
-        $this->seek(0, SEEK_END);
-        $end = ftell($this->_resource);
-
-        $size = min($end - $begin, 4);
-        if ($size === 0) {
-            return 'application/octet-stream';
+        if (is_resource($config['data'])) {
+            $this->_resource = $config['data'];
+            return;
         }
-
-        $this->seek($size, SEEK_SET);
-        $signature = fread($this->_resource, $size);
-
-        $size = min($end - $begin, 1024);
-        $this->seek($begin, SEEK_SET);
-        $signature = fread($this->_resource, $size) . $signature;
-        $this->seek($begin, SEEK_SET);
-
-        return finfo_buffer($finfo, $signature);
+        $stream = fopen('php://temp', 'r+');
+        if ($config['data']) {
+            fwrite($stream, $config['data']);
+            rewind($stream);
+        }
+        $this->_resource = $stream;
     }
 
     /**
-     * Gets the resource handler.
+     * Get the resource handler.
      *
      * @return resource
      */
@@ -152,7 +150,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets/sets the starting offset.
+     * Get/set the starting offset.
      *
      * @param  integer $start The offset to set.
      * @return string         The setted offset.
@@ -172,7 +170,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets/sets the stream range limit.
+     * Get/set the stream range limit.
      *
      * @param  integer $limit The limit to set.
      * @return string          The setted limit.
@@ -186,7 +184,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets the stream range length.
+     * Get the stream range length.
      */
     public function length()
     {
@@ -208,7 +206,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets/sets the range.
+     * Get/set the range.
      *
      * @param  integer $range The range to set.
      * @return string         The setted range.
@@ -224,7 +222,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets/sets the stream mime.
+     * Get/set the stream mime.
      *
      * @param  mixed  $mime The mime string to set or `true` to autodetect the mime.
      * @return string       The mime.
@@ -234,11 +232,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if (func_num_args() === 0) {
             return $this->_mime;
         }
-        return $this->_mime = $this->_getMime($mime);
+        return $this->_mime = static::getMime($this, $mime);
     }
 
     /**
-     * Gets stream meta data.
+     * Get stream meta data.
      *
      * @param  string $key A specific meta data or `null` to get all meta data.
      *                     Possibles values are:
@@ -255,6 +253,9 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function meta($key = null)
     {
+        if ($this->_resource === null && $this->_filename) {
+            $this->_resource = fopen($this->_filename, $this->_mode);
+        }
         $meta = stream_get_meta_data($this->_resource);
 
         if ($key) {
@@ -264,7 +265,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Checks if a stream is a local stream.
+     * Check if a stream is a local stream.
      *
      * @return boolean
      */
@@ -274,7 +275,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Checks if a stream is readable.
+     * Check if a stream is readable.
      *
      * @return boolean
      */
@@ -285,7 +286,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Throws an exception if a stream is not readable.
+     * Throw an exception if a stream is not readable.
      */
     protected function _ensureReadable()
     {
@@ -299,7 +300,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Checks if a stream is writable.
+     * Check if a stream is writable.
      *
      * @return boolean
      */
@@ -310,7 +311,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Throws an exception if a stream is not writable.
+     * Throw an exception if a stream is not writable.
      */
     protected function _ensureWritable()
     {
@@ -334,7 +335,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Throws an exception if a stream is not seekable.
+     * Throw an exception if a stream is not seekable.
      */
     protected function _ensureSeekable()
     {
@@ -347,7 +348,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets/sets the buffer size.
+     * Get/set the buffer size.
      *
      * @param  integer $bufferSize The buffer size to set or `null` to get the current buffer size.
      * @return integer             The buffer size.
@@ -379,7 +380,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Determines the buffer size to read.
+     * Determine the buffer size to read.
      *
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return integer         The allowed size.
@@ -398,7 +399,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Reads one line from the stream.
+     * Read one line from the stream.
      *
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @param  string  $ending Line ending to stop at (default to "\n").
@@ -416,7 +417,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Writes data to the stream.
+     * Write data to the stream.
      *
      * @param  string  $string The string that is to be written.
      * @param  integer $length If the length argument is given, writing will stop after length bytes have
@@ -435,7 +436,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Pushes data to the stream. The difference with `write()` is that the position of the file pointer still unchanged.
+     * Push data to the stream. The difference with `write()` is that the position of the file pointer still unchanged.
      *
      * @param  string  $string The string that is to be written.
      * @param  integer $length If the length argument is given, writing will stop after length bytes have
@@ -456,7 +457,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Reads the content of this stream and write it to another stream.
+     * Read the content of this stream and write it to another stream.
      *
      * @param  instance $stream The destination stream to write to
      * @return integer          The number of copied bytes
@@ -472,7 +473,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Returns the remaining data from the stream.
+     * Return the remaining data from the stream.
      *
      * @return string
      */
@@ -499,17 +500,20 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Gets the position of the file pointer
+     * Get the position of the file pointer
      *
      * @return integer
      */
     public function tell()
     {
+        if ($this->_resource === null && $this->_filename) {
+            $this->_resource = fopen($this->_filename, $this->_mode);
+        }
         return ftell($this->_resource);
     }
 
     /**
-     * Seeks on the stream.
+     * Seek on the stream.
      *
      * @param integer $offset The offset.
      * @param integer $whence Accepted values are:
@@ -519,13 +523,17 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
+        if ($this->_filename === 'php://input' && $this->eof() && !$offset && $whence === SEEK_SET) {
+            $this->close();
+            $this->_resource = fopen($this->_filename, 'r');
+        }
         $this->_ensureSeekable();
         fseek($this->_resource, $offset, $whence);
         return ftell($this->_resource);
     }
 
     /**
-     * Moves the file pointer to the beginning of the stream.
+     * Move the file pointer to the beginning of the stream.
      *
      * @return Boolean
      */
@@ -545,7 +553,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Seeks to the end of the stream.
+     * Seek to the end of the stream.
      *
      * @return Boolean
      */
@@ -559,12 +567,15 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Checks if the stream is valid.
+     * Check if the stream is valid.
      *
      * @return Boolean
      */
     public function valid()
     {
+        if ($this->_resource === null && $this->_filename) {
+            $this->_resource = fopen($this->_filename, $this->_mode);
+        }
         return !!$this->_resource && is_resource($this->_resource);
     }
 
@@ -624,16 +635,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Returns the remaining data from the stream (same as flush).
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return $this->toString();
-    }
-
-    /**
      * Closes the stream
      */
     public function __destruct()
@@ -642,20 +643,44 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * PSR-7 interoperability aliases
+     * Mime detector.
+     * Concat the first 1024 bytes + the last 4 bytes of readable & seekable streams
+     * to detext the mime info.
+     *
+     * @param string $stream The stream to extract mime value from.
+     * @param string $mime   The mime type detection. Possible values are:
+     *                       -`true`    : auto detect the mime.
+     *                       - a string : don't detect the mime and use the passed string instead.
+     *                       -`false`   : don't detect the mime.
+     * @return string        The detected mime.
      */
-    public function getSize()
+    public static function getMime($stream, $mime)
     {
-        return $this->length();
-    }
+        if (is_string($mime)) {
+            return $mime;
+        }
+        if (!$mime || !$stream->isSeekable() || !$stream->isReadable()) {
+            return 'application/octet-stream';
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
-    public function getContents()
-    {
-        return $this->flush();
-    }
+        $begin = $stream->tell();
+        $stream->seek(0, SEEK_END);
+        $end = $stream->tell();
 
-    public function getMetadata($key = null)
-    {
-        return $this->meta($key);
+        $size = min($end - $begin, 4);
+        if ($size === 0) {
+            return 'application/octet-stream';
+        }
+
+        $stream->seek($size, SEEK_SET);
+        $signature = $stream->read($size);
+
+        $size = min($end - $begin, 1024);
+        $stream->seek($begin, SEEK_SET);
+        $signature = $stream->read($size) . $signature;
+        $stream->seek($begin, SEEK_SET);
+
+        return finfo_buffer($finfo, $signature);
     }
 }

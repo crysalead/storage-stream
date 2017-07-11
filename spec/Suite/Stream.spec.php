@@ -55,6 +55,16 @@ describe("Stream", function() {
 
         });
 
+        it("throws an exception when both `'data` and `'filename'` are defined", function() {
+
+            $closure = function() {
+                new Stream(['data' => 'hello', 'filename' => 'myfile.tmp']);
+            };
+
+            expect($closure)->toThrow(new StreamException("Error, `'data'` or `'filename'` option must be defined."));
+
+        });
+
     });
 
     describe("->resource()", function() {
