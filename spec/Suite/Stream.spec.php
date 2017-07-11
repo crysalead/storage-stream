@@ -1,9 +1,10 @@
 <?php
 namespace Lead\Storage\Stream\Spec\Suite;
 
+use RuntimeException;
+use InvalidArgumentException;
 use Lead\Dir\Dir;
 use Lead\Storage\Stream\Stream;
-use Lead\Storage\Stream\StreamException;
 
 use Kahlan\Plugin\Stub;
 
@@ -61,7 +62,7 @@ describe("Stream", function() {
                 new Stream(['data' => 'hello', 'filename' => 'myfile.tmp']);
             };
 
-            expect($closure)->toThrow(new StreamException("Error, `'data'` or `'filename'` option must be defined."));
+            expect($closure)->toThrow(new InvalidArgumentException("Error, `'data'` or `'filename'` option must be defined."));
 
         });
 
@@ -77,7 +78,7 @@ describe("Stream", function() {
                 $stream->resource();
             };
 
-            expect($closure)->toThrow(new StreamException('Invalid resource.'));
+            expect($closure)->toThrow(new RuntimeException('Invalid resource.'));
 
         });
 
@@ -287,7 +288,7 @@ describe("Stream", function() {
                 $stream->read();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot read from a closed stream.'));
         });
 
         it("throws an exception on a non readable stream", function() {
@@ -297,7 +298,7 @@ describe("Stream", function() {
                 $stream->read();
             };
 
-            expect($closure)->toThrow(new StreamException("~Cannot read on a non-readable stream~"));
+            expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
         });
 
         it("reads data from the stream", function() {
@@ -376,7 +377,7 @@ describe("Stream", function() {
                 $stream->getLine();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot read from a closed stream.'));
         });
 
         it("throws an exception on a non readable stream", function() {
@@ -386,7 +387,7 @@ describe("Stream", function() {
                 $stream->getLine();
             };
 
-            expect($closure)->toThrow(new StreamException("~Cannot read on a non-readable stream~"));
+            expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
         });
 
         it("reads data from the stream", function() {
@@ -497,7 +498,7 @@ describe("Stream", function() {
                 $stream->write('foo');
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot write on a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot write on a closed stream.'));
         });
 
         it("throws an exception on a non writable stream", function() {
@@ -507,7 +508,7 @@ describe("Stream", function() {
                 $stream->write('foo');
             };
 
-            expect($closure)->toThrow(new StreamException("~Cannot write on a non-writable stream~"));
+            expect($closure)->toThrow(new RuntimeException("~Cannot write on a non-writable stream~"));
         });
 
         it("writes data to the stream", function() {
@@ -550,7 +551,7 @@ describe("Stream", function() {
                 $stream->push('foo');
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot write on a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot write on a closed stream.'));
         });
 
         it("throws an exception on a non writable stream", function() {
@@ -560,7 +561,7 @@ describe("Stream", function() {
                 $stream->push('foo');
             };
 
-            expect($closure)->toThrow(new StreamException("~Cannot write on a non-writable stream~"));
+            expect($closure)->toThrow(new RuntimeException("~Cannot write on a non-writable stream~"));
         });
 
         it("writes data to the stream", function() {
@@ -634,7 +635,7 @@ describe("Stream", function() {
                 $stream->timeout(5000);
             };
 
-            expect($closure)->toThrow(new StreamException('Invalid stream resource, unable to set a timeout on it.'));
+            expect($closure)->toThrow(new RuntimeException('Invalid stream resource, unable to set a timeout on it.'));
         });
 
         it("sets a timeout", function() {
@@ -658,7 +659,7 @@ describe("Stream", function() {
                 $stream->seek(3);
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot seek on a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot seek on a closed stream.'));
         });
 
         it("throws an exception if the stream is invalid", function() {
@@ -668,7 +669,7 @@ describe("Stream", function() {
                 $stream->seek(3);
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot seek on a non-seekable stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot seek on a non-seekable stream.'));
         });
 
         it("seeks to a specified position", function() {
@@ -807,7 +808,7 @@ describe("Stream", function() {
                 $stream->eof();
             };
 
-            expect($closure)->toThrow(new StreamException('Cannot read from a closed stream.'));
+            expect($closure)->toThrow(new RuntimeException('Cannot read from a closed stream.'));
         });
 
         it("returns `false` if the end of the stream has not been reached", function() {

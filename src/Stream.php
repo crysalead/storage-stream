@@ -1,6 +1,9 @@
 <?php
 namespace Lead\Storage\Stream;
 
+use RuntimeException;
+use InvalidArgumentException;
+
 class Stream implements \Psr\Http\Message\StreamInterface
 {
     use Psr7\StreamTrait;
@@ -115,7 +118,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected function _initResource($config)
     {
         if (isset($config['data']) && isset($config['filename'])) {
-            throw new StreamException("Error, `'data'` or `'filename'` option must be defined.");
+            throw new InvalidArgumentException("Error, `'data'` or `'filename'` option must be defined.");
         }
         if ($config['filename']) {
             $this->_filename = $config['filename'];
@@ -144,7 +147,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     public function resource()
     {
         if (!$this->valid()) {
-            throw new StreamException('Invalid resource.');
+            throw new RuntimeException('Invalid resource.');
         }
         return $this->_resource;
     }
@@ -291,11 +294,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected function _ensureReadable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot read from a closed stream.');
+            throw new RuntimeException('Cannot read from a closed stream.');
         }
         if (!$this->isReadable()) {
             $mode = $this->meta('mode');
-            throw new StreamException("Cannot read on a non-readable stream (mode is `'{$mode}'`).");
+            throw new RuntimeException("Cannot read on a non-readable stream (mode is `'{$mode}'`).");
         }
     }
 
@@ -316,11 +319,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected function _ensureWritable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot write on a closed stream.');
+            throw new RuntimeException('Cannot write on a closed stream.');
         }
         if (!$this->isWritable()) {
             $mode = $this->meta('mode');
-            throw new StreamException("Cannot write on a non-writable stream (mode is `'{$mode}'`).");
+            throw new RuntimeException("Cannot write on a non-writable stream (mode is `'{$mode}'`).");
         }
     }
 
@@ -340,10 +343,10 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected function _ensureSeekable()
     {
         if (!$this->valid()) {
-            throw new StreamException('Cannot seek on a closed stream.');
+            throw new RuntimeException('Cannot seek on a closed stream.');
         }
         if (!$this->isSeekable()) {
-            throw new StreamException('Cannot seek on a non-seekable stream.');
+            throw new RuntimeException('Cannot seek on a non-seekable stream.');
         }
     }
 
@@ -493,7 +496,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return $this->_timeout;
         }
         if (!$this->valid()) {
-            throw new StreamException("Invalid stream resource, unable to set a timeout on it.");
+            throw new RuntimeException("Invalid stream resource, unable to set a timeout on it.");
         }
         $this->_timeout = $delay;
         return stream_set_timeout($this->_resource, 0, $delay);
