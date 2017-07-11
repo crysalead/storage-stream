@@ -18,12 +18,15 @@ describe("MultipartStream", function() {
             expect($multipartStream->isReadable())->toBe(true);
             expect($multipartStream->boundary())->not->toBeEmpty();
 
+            $multipartStream->close();
+
         });
 
         it("supports custom boundary", function() {
 
             $multipartStream = new MultipartStream(['boundary' => 'foo']);
             expect($multipartStream->boundary())->toBe('foo');
+            $multipartStream->close();
 
         });
 
@@ -35,6 +38,8 @@ describe("MultipartStream", function() {
 
             $multipartStream = new MultipartStream();
             expect($multipartStream->meta())->toBe([]);
+
+            $multipartStream->close();
 
         });
 
@@ -59,6 +64,8 @@ bar\r
 EOD;
             expect($multipartStream->toString())->toBe($expected);
 
+            $multipartStream->close();
+
         });
 
         it("add custom headers", function() {
@@ -81,6 +88,8 @@ bar\r
 EOD;
             expect($multipartStream->toString())->toBe($expected);
 
+            $multipartStream->close();
+
         });
 
         it("overwrites disposition", function() {
@@ -100,17 +109,21 @@ bar\r
 EOD;
             expect($multipartStream->toString())->toBe($expected);
 
+            $multipartStream->close();
+
         });
 
         it("throws an exception if the `'name'` option is empty", function() {
 
-            $closure = function() {
-                $multipartStream = new MultipartStream();
+            $multipartStream = new MultipartStream();
+
+            $closure = function() use ($multipartStream) {
                 $stream = new Stream();
                 $multipartStream->add($stream);
             };
 
             expect($closure)->toThrow(new InvalidArgumentException("The `'name'` option is required."));
+            $multipartStream->close();
 
         });
 
@@ -119,7 +132,6 @@ EOD;
     describe("->read()", function() {
 
         it("serializes fields", function() {
-
             $multipartStream = new MultipartStream(['boundary' => 'boundary']);
 
             $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo']);
@@ -141,6 +153,8 @@ bam\r
 
 EOD;
             expect($multipartStream->toString())->toBe($expected);
+
+            $multipartStream->close();
 
         });
 
@@ -183,6 +197,8 @@ EOD;
 
             expect($multipartStream->toString())->toBe($expected);
 
+            $multipartStream->close();
+
         });
 
     });
@@ -191,12 +207,14 @@ EOD;
 
         it("throws an exception on write", function() {
 
-            $closure = function() {
-                $multipartStream = new MultipartStream();
+            $multipartStream = new MultipartStream();
+
+            $closure = function() use ($multipartStream) {
                 $multipartStream->write('hello');
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances are not writable."));
+            $multipartStream->close();
 
         });
 
@@ -208,6 +226,8 @@ EOD;
 
             $multipartStream = new MultipartStream();
             expect($multipartStream->toString())->toBe('--' . $multipartStream->boundary() . "--\r\n");
+
+            $multipartStream->close();
 
         });
 

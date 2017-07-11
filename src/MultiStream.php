@@ -282,11 +282,14 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
         return $length;
     }
 
+    /**
+     * Checks for EOF.
+     *
+     * @return boolean
+     */
     public function eof()
     {
-        return !$this->_streams ||
-            ($this->_current >= count($this->_streams) - 1 &&
-             $this->_streams[$this->_current]->eof());
+        return !$this->_streams || ($this->_current >= count($this->_streams) - 1 && $this->_streams[$this->_current]->eof());
     }
 
     /**
@@ -319,28 +322,9 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Closes each attached stream.
-     *
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        $this->_offset = $this->_current = 0;
-        $this->_seekable = true;
-
-        foreach ($this->_streams as $stream) {
-            $stream->close();
-        }
-
-        $this->_streams = [];
-    }
-
-    /**
      * Detaches each attached stream.
      *
      * Returns null as it's not clear which underlying stream resource to return.
-     *
-     * {@inheritdoc}
      */
     public function detach()
     {
@@ -349,6 +333,21 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
 
         foreach ($this->_streams as $stream) {
             $stream->detach();
+        }
+
+        $this->_streams = [];
+    }
+
+    /**
+     * Closes each attached stream.
+     */
+    public function close()
+    {
+        $this->_offset = $this->_current = 0;
+        $this->_seekable = true;
+
+        foreach ($this->_streams as $stream) {
+            $stream->close();
         }
 
         $this->_streams = [];

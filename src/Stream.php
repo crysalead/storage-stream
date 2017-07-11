@@ -632,7 +632,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     {
         $resource = $this->detach();
         if (!is_resource($resource)) {
-            return false;
+            return true;
         }
         return fclose($resource);
     }

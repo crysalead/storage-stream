@@ -902,7 +902,7 @@ describe("Stream", function() {
             $stream = new Stream(['data' => $file]);
             expect($stream->detach())->toBe($file);
             expect($stream->valid())->toBe(false);
-            expect($stream->close())->toBe(false);
+            expect($stream->close())->toBe(true);
 
         });
 
@@ -915,7 +915,7 @@ describe("Stream", function() {
             $stream = new Stream();
             expect($stream->close())->toBe(true);
             expect($stream->valid())->toBe(false);
-            expect($stream->close())->toBe(false);
+            expect($stream->close())->toBe(true);
 
         });
 

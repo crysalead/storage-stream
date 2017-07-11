@@ -17,6 +17,8 @@ describe("MultiStream", function() {
             expect($multiStream->isSeekable())->toBe(true);
             expect($multiStream->isReadable())->toBe(true);
 
+            $multiStream->close();
+
         });
 
     });
@@ -28,6 +30,8 @@ describe("MultiStream", function() {
             $multiStream = new MultiStream();
             expect($multiStream->meta())->toBe([]);
 
+            $multiStream->close();
+
         });
 
     });
@@ -36,32 +40,37 @@ describe("MultiStream", function() {
 
         it("throws an exception if the stream is not readable", function() {
 
-            $closure = function() {
-                $multiStream = new MultiStream();
+            $multiStream = new MultiStream();
+
+            $closure = function() use ($multiStream) {
                 $stream = new Stream();
                 allow($stream)->toReceive('isReadable')->andReturn(false);
                 $multiStream->add($stream);
             };
 
             expect($closure)->toThrow(new InvalidArgumentException("Can't appends a non readable stream."));
+            $multiStream->close();
 
         });
 
         it("throws an exception for invalid fseek value", function() {
 
-            $closure = function() {
-                $multiStream = new MultiStream();
+            $multiStream = new MultiStream();
+
+            $closure = function() use ($multiStream) {
                 $multiStream->seek(100, SEEK_CUR);
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances can only seek with SEEK_SET."));
+            $multiStream->close();
 
         });
 
         it("throws an exception for invalid fseek value", function() {
 
-            $closure = function() {
-                $multiStream = new MultiStream();
+            $multiStream = new MultiStream();
+
+            $closure = function() use ($multiStream) {
                 $stream = new Stream();
                 $multiStream->add($stream);
 
@@ -72,6 +81,7 @@ describe("MultiStream", function() {
             };
 
             expect($closure)->toThrow(new RuntimeException("Unable to seek stream 0 of the `MultiStream`."));
+            $multiStream->close();
 
         });
 
@@ -101,6 +111,8 @@ describe("MultiStream", function() {
 
             expect($multiStream->toString())->toBe('foobarbaz');
 
+            $multiStream->close();
+
         });
 
     });
@@ -109,12 +121,14 @@ describe("MultiStream", function() {
 
         it("throws an exception on write", function() {
 
-            $closure = function() {
-                $multiStream = new MultiStream();
+            $multiStream = new MultiStream();
+
+            $closure = function() use ($multiStream) {
                 $multiStream->write('hello');
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances are not writable."));
+            $multiStream->close();
 
         });
 
@@ -138,6 +152,8 @@ describe("MultiStream", function() {
             expect($multiStream->tell())->toBe(6);
             expect($multiStream->read(3))->toBe('baz');
 
+            $multiStream->close();
+
         });
 
     });
@@ -148,6 +164,8 @@ describe("MultiStream", function() {
 
             $multiStream = new MultiStream();
             expect($multiStream->toString())->toBe('');
+
+            $multiStream->close();
 
         });
 
@@ -165,6 +183,8 @@ describe("MultiStream", function() {
 
             expect($multiStream->length())->toBe(9);
 
+            $multiStream->close();
+
         });
 
         it("returns `null` if one stream is not seekable", function() {
@@ -179,6 +199,8 @@ describe("MultiStream", function() {
             $multiStream->add($stream);
 
             expect($multiStream->length())->toBe(null);
+
+            $multiStream->close();
 
         });
 
@@ -197,6 +219,8 @@ describe("MultiStream", function() {
             expect((string) $multiStream)->toBe('');
             expect($multiStream->isSeekable())->toBe(true);
             expect($multiStream->isWritable())->toBe(false);
+
+            $multiStream->close();
 
         });
 
@@ -223,6 +247,8 @@ describe("MultiStream", function() {
             expect(is_resource($handle2))->toBe(true);
             fclose($handle1);
             fclose($handle2);
+
+            $multiStream->close();
 
         });
 
