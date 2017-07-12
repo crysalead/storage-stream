@@ -6,8 +6,6 @@ use InvalidArgumentException;
 use Lead\Dir\Dir;
 use Lead\Storage\Stream\Stream;
 
-use Kahlan\Plugin\Stub;
-
 describe("Stream", function() {
 
     beforeEach(function() {
@@ -44,6 +42,19 @@ describe("Stream", function() {
 
         });
 
+        it("creates a strema from a filename", function() {
+
+            $stream = new Stream([
+                'filename' => 'spec/Fixture/helloworld.txt',
+                'mode'     => 'r+',
+                'mime'     => true
+            ]);
+            expect($stream->mime())->toBe('text/plain');
+            expect($stream->read())->toBe("Hello World!\n");
+            $stream->close();
+
+        });
+
         it("allows a non array as constructor", function() {
 
             $stream = new Stream('HelloWorld');
@@ -53,6 +64,35 @@ describe("Stream", function() {
             skipIf(!defined('HHVM_VERSION')); // Skip for PHP since https://bugs.php.net/bug.php?id=68948
             expect($stream->eof())->toBe(true);
             $stream->close();
+
+        });
+
+        it("rewinds a stream according its start position", function() {
+
+            $stream = new Stream([
+                'data'  => 'foo bar baz',
+                'start' => 4,
+                'limit' => 3
+            ]);
+
+            expect($stream->tell())->toBe(4);
+            $stream->close();
+
+        });
+
+        it("throws an exception if start is defined on a non seekable stream", function() {
+
+            $closure = function() {
+                allow(Stream::class)->toReceive('isSeekable')->andReturn(false);
+
+                $stream = new Stream([
+                    'data'  => 'foo bar baz',
+                    'start' => 4,
+                    'limit' => 3
+                ]);
+            };
+
+            expect($closure)->toThrow(new RuntimeException("The `'start'` option can't be used with non seekable streams."));
 
         });
 
@@ -74,7 +114,7 @@ describe("Stream", function() {
 
             $closure = function() {
                 $stream = new Stream(['data' => []]);
-                Stub::on($stream)->method('valid')->andReturn(false);
+                allow($stream)->toReceive('valid')->andReturn(false);
                 $stream->resource();
             };
 
@@ -293,12 +333,14 @@ describe("Stream", function() {
 
         it("throws an exception on a non readable stream", function() {
 
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
+            $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
+
+            $closure = function() use ($stream) {
                 $stream->read();
             };
-
             expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
+            $stream->close();
+
         });
 
         it("reads data from the stream", function() {
@@ -382,12 +424,15 @@ describe("Stream", function() {
 
         it("throws an exception on a non readable stream", function() {
 
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
+            $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
+
+            $closure = function() use ($stream) {
                 $stream->getLine();
             };
 
             expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
+            $stream->close();
+
         });
 
         it("reads data from the stream", function() {
@@ -503,12 +548,15 @@ describe("Stream", function() {
 
         it("throws an exception on a non writable stream", function() {
 
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('php://temp', 'r')]);
+            $stream = new Stream(['data' => fopen('php://temp', 'r')]);
+
+            $closure = function() use ($stream) {
                 $stream->write('foo');
             };
 
             expect($closure)->toThrow(new RuntimeException("~Cannot write on a non-writable stream~"));
+            $stream->close();
+
         });
 
         it("writes data to the stream", function() {
@@ -525,6 +573,16 @@ describe("Stream", function() {
 
         });
 
+        it("overwrites data", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+            $actual = $stream->write('baz');
+            expect($actual)->toBe(3);
+            expect((string) $stream)->toBe('bazbar');
+            $stream->close();
+
+        });
+
         it("writes only a specified number of character", function() {
 
             $handle = fopen('php://temp', 'w+');
@@ -535,6 +593,20 @@ describe("Stream", function() {
             $stream->rewind();
             expect($stream->read())->toBe('fo');
             expect($stream->valid())->toBe(true);
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->append()", function() {
+
+        it("appends data to the stream", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+            $actual = $stream->append('baz');
+            expect($actual)->toBe(3);
+            expect((string) $stream)->toBe('foobarbaz');
             $stream->close();
 
         });
@@ -556,12 +628,15 @@ describe("Stream", function() {
 
         it("throws an exception on a non writable stream", function() {
 
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('php://temp', 'r')]);
+            $stream = new Stream(['data' => fopen('php://temp', 'r')]);
+
+            $closure = function() use ($stream) {
                 $stream->push('foo');
             };
 
             expect($closure)->toThrow(new RuntimeException("~Cannot write on a non-writable stream~"));
+            $stream->close();
+
         });
 
         it("writes data to the stream", function() {
@@ -631,7 +706,7 @@ describe("Stream", function() {
 
             $closure = function() {
                 $stream = new Stream(['data' => []]);
-                Stub::on($stream)->method('valid')->andReturn(false);
+                allow($stream)->toReceive('valid')->andReturn(false);
                 $stream->timeout(5000);
             };
 
@@ -664,12 +739,15 @@ describe("Stream", function() {
 
         it("throws an exception if the stream is invalid", function() {
 
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('php://output', 'r')]);
+            $stream = new Stream(['data' => fopen('php://output', 'r')]);
+
+            $closure = function() use ($stream) {
                 $stream->seek(3);
             };
 
             expect($closure)->toThrow(new RuntimeException('Cannot seek on a non-seekable stream.'));
+            $stream->close();
+
         });
 
         it("seeks to a specified position", function() {
@@ -870,7 +948,7 @@ describe("Stream", function() {
 
             $stream = new Stream(['data' => 'foobar']);
 
-            Stub::on($stream)->method('isSeekable')->andReturn(false);
+            allow($stream)->toReceive('isSeekable')->andReturn(false);
 
             expect((string) $stream)->toBe('foobar');
             expect((string) $stream)->toBe('');
@@ -1199,6 +1277,51 @@ describe("Stream", function() {
 
             $stream->getMetadata('mode');
 
+        });
+
+    });
+
+    describe("->__clone()", function() {
+
+        it("clones a stream", function() {
+
+            $stream1 = new Stream(['data' => 'foobar']);
+            $stream2 = clone $stream1;
+
+            $stream2->append('baz');
+            expect((string) $stream1)->toBe('foobar');
+            expect((string) $stream2)->toBe('foobarbaz');
+
+            $stream1->close();
+            $stream2->close();
+
+        });
+
+        it("clones a stream based on filename", function() {
+
+            $stream1 = new Stream(['filename' => 'spec/Fixture/helloworld.txt', 'mode' => 'r+']);
+            $stream2 = clone $stream1;
+
+            expect($stream1->flush())->toBe("Hello World!\n");
+            expect($stream2->flush())->toBe("Hello World!\n");
+
+            $stream1->close();
+            $stream2->close();
+
+        });
+
+        it("throws an exception if the stream is not seekable", function() {
+
+            $stream = new Stream(['data' => 'foobar']);
+
+            $closure = function() use ($stream) {
+                allow(Stream::class)->toReceive('isSeekable')->andReturn(false);
+                clone $stream;
+            };
+
+            $stream->close();
+
+            expect($closure)->toThrow(new RuntimeException('Cannot clone a non seekable stream.'));
         });
 
     });

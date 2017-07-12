@@ -84,7 +84,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     public function __construct($config = [])
     {
         $defaults = [
-            'data'       => null,
+            'data'       => '',
             'filename'   => null,
             'mode'       => 'r+',
             'mime'       => null,
@@ -121,7 +121,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     protected function _initResource($config)
     {
-        if (isset($config['data']) && isset($config['filename'])) {
+        if (!empty($config['data']) && !empty($config['filename'])) {
             throw new InvalidArgumentException("The `'data'` or `'filename'` option must be defined.");
         }
         if ($config['filename']) {
@@ -129,18 +129,17 @@ class Stream implements \Psr\Http\Message\StreamInterface
             if ($this->_filename === 'php://input') {
                 $this->_mode = 'r';
             }
+            $this->_resource = fopen($this->_filename, $this->_mode);
             return;
         }
         if (is_resource($config['data'])) {
             $this->_resource = $config['data'];
             return;
+        } elseif (is_scalar($config['data'])) {
+            $this->_resource = fopen('php://temp', 'r+');
+            fwrite($this->_resource, (string) $config['data']);
+            rewind($this->_resource);
         }
-        $stream = fopen('php://temp', 'r+');
-        if ($config['data']) {
-            fwrite($stream, $config['data']);
-            rewind($stream);
-        }
-        $this->_resource = $stream;
     }
 
     /**
@@ -262,6 +261,9 @@ class Stream implements \Psr\Http\Message\StreamInterface
     {
         if ($this->_resource === null && $this->_filename) {
             $this->_resource = fopen($this->_filename, $this->_mode);
+        }
+        if (!$this->valid()) {
+            throw new RuntimeException('Invalid resource.');
         }
         $meta = stream_get_meta_data($this->_resource);
 
@@ -440,6 +442,20 @@ class Stream implements \Psr\Http\Message\StreamInterface
             $result = fwrite($this->_resource, $string, $length);
         }
         return $result;
+    }
+
+    /**
+     * Append data to the stream.
+     *
+     * @param  string  $string The string that is to be written.
+     * @param  integer $length If the length argument is given, writing will stop after length bytes have
+     *                         been written or the end of string if reached, whichever comes first.
+     * @return integer         Number of bytes written
+     */
+    public function append($string, $length = null)
+    {
+        $this->end();
+        return $this->write($string, $length);
     }
 
     /**
@@ -689,5 +705,23 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $stream->seek($old, SEEK_SET);
 
         return finfo_buffer($finfo, $signature);
+    }
+
+    /**
+     * Clones the message.
+     */
+    public function __clone()
+    {
+        if ($this->_filename !== null) {
+            $this->_resource = fopen($this->_filename, $this->_mode);
+            return;
+        }
+        if (!$this->isSeekable()) {
+            throw new RuntimeException("Cannot clone a non seekable stream.");
+        }
+        $resource = fopen('php://temp', 'r+');
+        fwrite($resource, (string) $this);
+        rewind($resource);
+        $this->_resource = $resource;
     }
 }
