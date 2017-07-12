@@ -317,8 +317,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
             return $this->flush();
         }
         $this->rewind();
-        $result = $this->flush();
-        return $result;
+        return $this->flush();
     }
 
     /**

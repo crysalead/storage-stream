@@ -62,7 +62,7 @@ describe("Stream", function() {
                 new Stream(['data' => 'hello', 'filename' => 'myfile.tmp']);
             };
 
-            expect($closure)->toThrow(new InvalidArgumentException("Error, `'data'` or `'filename'` option must be defined."));
+            expect($closure)->toThrow(new InvalidArgumentException("The `'data'` or `'filename'` option must be defined."));
 
         });
 

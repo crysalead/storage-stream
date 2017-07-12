@@ -105,7 +105,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $this->_limit = $config['limit'];
         $this->_length = $config['length'];
         $this->_mime = static::getMime($this, $config['mime']);
+
         if ($this->_start > 0) {
+            if(!$this->isSeekable()) {
+                throw new RuntimeException("The `'start'` option can't be used with non seekable streams.");
+            }
             $this->rewind();
         }
     }
@@ -118,7 +122,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected function _initResource($config)
     {
         if (isset($config['data']) && isset($config['filename'])) {
-            throw new InvalidArgumentException("Error, `'data'` or `'filename'` option must be defined.");
+            throw new InvalidArgumentException("The `'data'` or `'filename'` option must be defined.");
         }
         if ($config['filename']) {
             $this->_filename = $config['filename'];
@@ -667,11 +671,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
         }
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
-        $begin = $stream->tell();
-        $stream->seek(0, SEEK_END);
-        $end = $stream->tell();
+        $old = $stream->tell();
+        $stream->rewind();
+        $end = $stream->end();
 
-        $size = min($end - $begin, 4);
+        $size = min($end - 0, 4);
         if ($size === 0) {
             return 'application/octet-stream';
         }
@@ -679,10 +683,10 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $stream->seek($size, SEEK_SET);
         $signature = $stream->read($size);
 
-        $size = min($end - $begin, 1024);
-        $stream->seek($begin, SEEK_SET);
+        $size = min($end - 0, 1024);
+        $stream->rewind();
         $signature = $stream->read($size) . $signature;
-        $stream->seek($begin, SEEK_SET);
+        $stream->seek($old, SEEK_SET);
 
         return finfo_buffer($finfo, $signature);
     }
