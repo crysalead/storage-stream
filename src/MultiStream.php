@@ -48,13 +48,6 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     protected $_offset = 0;
 
     /**
-     * Indicate if the last stream must be keept at the last position.
-     *
-     * @return boolean
-     */
-    protected $_keepLast = false;
-
-    /**
      * The constructor
      *
      * @param array $config The configuration array. Possibles values are:
@@ -63,12 +56,10 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function __construct($config = [])
     {
         $defaults = [
-            'bufferSize' => 4096,
-            'keepLast' => false
+            'bufferSize' => 4096
         ];
         $config += $defaults;
         $this->_bufferSize = $config['bufferSize'];
-        $this->_keepLast = $config['keepLast'];
     }
 
     /**
@@ -146,13 +137,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
             $this->_seekable = false;
         }
 
-        if ($this->_streams && $this->_keepLast) {
-            $last = array_pop($this->_streams);
-            $this->_streams[] = $stream;
-            $this->_streams[] = $last;
-        } else {
-            $this->_streams[] = $stream;
-        }
+        $this->_streams[] = $stream;
         return $this;
     }
 

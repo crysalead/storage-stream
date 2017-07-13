@@ -72,6 +72,13 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected $_timeout = -1;
 
     /**
+     * End user custom option array
+     *
+     * @var array
+     */
+    protected $_options = [];
+
+    /**
      * The constructor
      *
      * @param array $config The configuration array. Possibles values are:
@@ -91,7 +98,8 @@ class Stream implements \Psr\Http\Message\StreamInterface
             'start'      => 0,
             'limit'      => null,
             'length'     => null,
-            'bufferSize' => 4096
+            'bufferSize' => 4096,
+            'options'    => []
         ];
         if (!is_array($config)) {
             $config = ['data' => $config];
@@ -105,6 +113,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $this->_limit = $config['limit'];
         $this->_length = $config['length'];
         $this->_mime = static::getMime($this, $config['mime']);
+        $this->_options = $config['options'];
 
         if ($this->_start > 0) {
             if(!$this->isSeekable()) {
@@ -166,7 +175,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if (func_num_args() === 0) {
             return $this->_start;
         }
-        $this->_start = $start;
+        $this->_start = (int) $start;
 
         if ($autoseek) {
             $this->rewind();
@@ -186,7 +195,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if (func_num_args() === 0) {
             return $this->_limit;
         }
-        return $this->_limit = $limit;
+        return $this->_limit = (int) $limit;
     }
 
     /**
@@ -239,6 +248,20 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return $this->_mime;
         }
         return $this->_mime = static::getMime($this, $mime);
+    }
+
+    /**
+     * Get/set end user options.
+     *
+     * @param  array  $options The end user options to set.
+     * @return string          The setted end user options.
+     */
+    public function options($options = [])
+    {
+        if (func_num_args() === 0) {
+            return $this->_options;
+        }
+        return $this->_options = $options ?: [];
     }
 
     /**

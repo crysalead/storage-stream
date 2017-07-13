@@ -50,15 +50,19 @@ describe("MultipartStream", function() {
         it("overwrites mime", function() {
 
             $multipartStream = new MultipartStream(['boundary' => 'boundary']);
-            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'mime' => 'image/png']);
+            $multipartStream->add(new Stream(['data' => 'bar']), [
+                'name'        => 'foo',
+                'disposition' => 'inline',
+                'mime'        => 'image/png'
+            ]);
 
             $expected = <<<EOD
 --boundary\r
-Content-Disposition: form-data; name="foo"\r
+Content-Disposition: inline; name="foo"\r
 Content-Type: image/png\r
-Content-Length: 3\r
+Content-Transfer-Encoding: base64\r
 \r
-bar\r
+YmFy\r
 --boundary--\r
 
 EOD;
@@ -71,16 +75,20 @@ EOD;
         it("add custom headers", function() {
 
             $multipartStream = new MultipartStream(['boundary' => 'boundary']);
-            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'headers' => [
-                'x-foo: "bar"'
-            ]]);
+            $multipartStream->add(new Stream(['data' => 'bar']), [
+                'name'        => 'foo',
+                'disposition' => 'form-data',
+                'headers'     => [
+                    'x-foo: "bar"'
+                ]
+            ]);
 
             $expected = <<<EOD
 --boundary\r
 x-foo: "bar"\r
 Content-Disposition: form-data; name="foo"\r
-Content-Type: text/plain\r
-Content-Length: 3\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
 \r
 bar\r
 --boundary--\r
@@ -100,8 +108,8 @@ EOD;
             $expected = <<<EOD
 --boundary\r
 Content-Disposition: attachment; name="foo"\r
-Content-Type: text/plain\r
-Content-Length: 3\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
 \r
 bar\r
 --boundary--\r
@@ -134,19 +142,25 @@ EOD;
         it("serializes fields", function() {
             $multipartStream = new MultipartStream(['boundary' => 'boundary']);
 
-            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo']);
-            $multipartStream->add(new Stream(['data' => 'bam']), ['name' => 'baz']);
+            $multipartStream->add(new Stream(['data' => 'bar']), [
+                'name' => 'foo',
+                'disposition' => 'form-data'
+            ]);
+            $multipartStream->add(new Stream(['data' => 'bam']), [
+                'name' => 'baz',
+                'disposition' => 'form-data'
+            ]);
 
             $expected = <<<EOD
 --boundary\r
 Content-Disposition: form-data; name="foo"\r
-Content-Type: text/plain\r
-Content-Length: 3\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
 \r\nbar\r
 --boundary\r
 Content-Disposition: form-data; name="baz"\r
-Content-Type: text/plain\r
-Content-Length: 3\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
 \r
 bam\r
 --boundary--\r
@@ -162,33 +176,34 @@ EOD;
 
             $multipartStream = new MultipartStream(['boundary' => 'boundary']);
 
-            $multipartStream->add(new Stream(['data' => 1]), ['name' => 'int']);
-            $multipartStream->add(new Stream(['data' => false]), ['name' => 'bool1']);
-            $multipartStream->add(new Stream(['data' => true]), ['name' => 'bool2']);
-            $multipartStream->add(new Stream(['data' => 1.1]), ['name' => 'float']);
+            $multipartStream->add(new Stream(['data' => 1]), ['name' => 'int','disposition' => 'form-data']);
+            $multipartStream->add(new Stream(['data' => false]), ['name' => 'bool1','disposition' => 'form-data']);
+            $multipartStream->add(new Stream(['data' => true]), ['name' => 'bool2', 'disposition' => 'form-data']);
+            $multipartStream->add(new Stream(['data' => 1.1]), ['name' => 'float','disposition' => 'form-data']);
 
             $expected = <<<EOD
 --boundary\r
 Content-Disposition: form-data; name="int"\r
 Content-Type: application/octet-stream\r
-Content-Length: 1\r
+Content-Transfer-Encoding: base64\r
 \r
-1\r
+MQ==\r
 --boundary\r
 Content-Disposition: form-data; name="bool1"\r
 Content-Type: application/octet-stream\r
+Content-Transfer-Encoding: base64\r
 \r
 \r
 --boundary\r
 Content-Disposition: form-data; name="bool2"\r
 Content-Type: application/octet-stream\r
-Content-Length: 1\r
+Content-Transfer-Encoding: base64\r
 \r
-1\r
+MQ==\r
 --boundary\r
 Content-Disposition: form-data; name="float"\r
-Content-Type: text/plain\r
-Content-Length: 3\r
+Content-Type: text/plain; charset=utf-8\r
+Content-Transfer-Encoding: quoted-printable\r
 \r
 1.1\r
 --boundary--\r
@@ -197,6 +212,23 @@ EOD;
 
             expect($multipartStream->toString())->toBe($expected);
 
+            $multipartStream->close();
+
+        });
+
+    });
+
+    describe("->read()", function() {
+
+        it("throws an exception on read", function() {
+
+            $multipartStream = new MultipartStream();
+
+            $closure = function() use ($multipartStream) {
+                $multipartStream->read('hello');
+            };
+
+            expect($closure)->toThrow(new RuntimeException("`MultiStream` instances cannot be read byte per byte."));
             $multipartStream->close();
 
         });
@@ -214,6 +246,23 @@ EOD;
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances are not writable."));
+            $multipartStream->close();
+
+        });
+
+    });
+
+    describe("->length()", function() {
+
+        it("throws an exception when called", function() {
+
+            $multipartStream = new MultipartStream();
+
+            $closure = function() use ($multipartStream) {
+                $multipartStream->length();
+            };
+
+            expect($closure)->toThrow(new RuntimeException("Cannot extract `MultiStream` length."));
             $multipartStream->close();
 
         });
