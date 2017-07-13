@@ -139,7 +139,7 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'foo bar']);
             expect($stream->start())->toBe(0);
 
-            expect($stream->start(4))->toBe(4);
+            expect($stream->start(4))->toBe($stream);
             expect($stream->start())->toBe(4);
             $stream->close();
 
@@ -153,7 +153,7 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'foo bar']);
             expect($stream->limit())->toBe(null);
 
-            expect($stream->limit(3))->toBe(3);
+            expect($stream->limit(3))->toBe($stream);
             expect($stream->limit())->toBe(3);
             $stream->close();
 
@@ -167,11 +167,13 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'foo bar']);
             expect($stream->range())->toBe('0-');
 
-            expect($stream->range('3-'))->toBe('3-');
+            expect($stream->range('3-'))->toBe($stream);
+            expect($stream->range())->toBe('3-');
             expect($stream->start())->toBe(3);
             expect($stream->limit())->toBe(null);
 
-            expect($stream->range('1-3'))->toBe('1-3');
+            expect($stream->range('1-3'))->toBe($stream);
+            expect($stream->range())->toBe('1-3');
             expect($stream->start())->toBe(1);
             expect($stream->limit())->toBe(2);
 
@@ -320,29 +322,6 @@ describe("Stream", function() {
 
     describe("->read()", function() {
 
-        it("throws an exception if the stream is invalid", function() {
-
-            $closure = function() {
-                $stream = new Stream(['data' => fopen('php://temp', 'r+')]);
-                $stream->close();
-                $stream->read();
-            };
-
-            expect($closure)->toThrow(new RuntimeException('Cannot read from a closed stream.'));
-        });
-
-        it("throws an exception on a non readable stream", function() {
-
-            $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
-
-            $closure = function() use ($stream) {
-                $stream->read();
-            };
-            expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
-            $stream->close();
-
-        });
-
         it("reads data from the stream", function() {
 
             $stream = new Stream(['data' => 'foo']);
@@ -405,6 +384,39 @@ describe("Stream", function() {
             expect($stream->valid())->toBe(true);
             $stream->close();
 
+        });
+
+        it("throws an exception if the stream is invalid", function() {
+
+            $closure = function() {
+                $stream = new Stream(['data' => fopen('php://temp', 'r+')]);
+                $stream->close();
+                $stream->read();
+            };
+
+            expect($closure)->toThrow(new RuntimeException('Cannot read from a closed stream.'));
+        });
+
+        it("throws an exception on a non readable stream", function() {
+
+            $stream = new Stream(['data' => fopen('file://' . $this->filename, 'w')]);
+
+            $closure = function() use ($stream) {
+                $stream->read();
+            };
+            expect($closure)->toThrow(new RuntimeException("~Cannot read on a non-readable stream~"));
+            $stream->close();
+
+        });
+
+        it("throws an exception if the encoding is enabled", function() {
+
+            $closure = function() {
+                $stream = new Stream(['encoding' => 'base64']);
+                $stream->read();
+            };
+
+            expect($closure)->toThrow(new RuntimeException('Stream with encoding cannot be read byte per byte.'));
         });
 
     });
@@ -687,7 +699,7 @@ describe("Stream", function() {
 
     describe("->flush()", function() {
 
-        it("reads the remaining data from the stream", function() {
+        it("flushes the remaining data from the stream", function() {
 
             $stream = new Stream(['data' => 'foobar']);
             $stream->bufferSize(1);
@@ -696,6 +708,66 @@ describe("Stream", function() {
             expect($stream->valid())->toBe(true);
             $stream->close();
 
+        });
+
+        it("flushes 7bit encoded data", function() {
+
+            $stream = new Stream(['data' => 'àa', 'encoding' => '7bit']);
+            expect($stream->flush())->toBe('a');
+            $stream->close();
+
+        });
+
+        it("flushes 8bit encoded data", function() {
+
+            $stream = new Stream(['data' => 'rЯ', 'encoding' => '8bit']);
+            expect($stream->flush())->toBe('rЯ');
+            $stream->close();
+
+        });
+
+        it("flushes binary data", function() {
+
+            $stream = new Stream(['data' => 'rЯ', 'encoding' => 'binary']);
+            expect($stream->flush())->toBe('rЯ');
+            $stream->close();
+
+        });
+
+        it("flushes 8bit encoded data", function() {
+
+            $stream = new Stream(['data' => 'Я', 'encoding' => 'quoted-printable']);
+            expect($stream->flush())->toBe('=D0=AF');
+            $stream->close();
+
+        });
+
+        it("flushes base64 encoded data", function() {
+
+            $stream = new Stream(['data' => 'bar', 'encoding' => 'base64']);
+            expect($stream->flush())->toBe('YmFy');
+            $stream->close();
+
+        });
+
+        it("throws an exception if trying to use a 7bit encoding on data containing 1000+ characters on a line", function() {
+
+            $closure = function() {
+                $stream = new Stream(['data' => str_pad('to much', 1000, "___"), 'encoding' => '7bit']);
+                $stream->flush();
+            };
+
+            expect($closure)->toThrow(new RuntimeException("A line with more that 1000 characters has been detected, cannot use `'7bit'` encoding."));
+        });
+
+        it("throws an exception if trying to use a 8bit encoding on data containing 1000+ characters on a line", function() {
+
+            $closure = function() {
+                $stream = new Stream(['data' => str_pad('to much', 1000, "___"), 'encoding' => '8bit']);
+                $stream->flush();
+            };
+
+            expect($closure)->toThrow(new RuntimeException("A line with more that 1000 characters has been detected, cannot use `'8bit'` encoding."));
         });
 
     });
@@ -1031,10 +1103,10 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'foobar']);
 
             expect($stream->length())->toBe(6);
-            expect($stream->range('1-3'))->toBe('1-3');
+            expect($stream->range('1-3'))->toBe($stream);
             expect($stream->length())->toBe(2);
 
-            expect($stream->range('0-'))->toBe('0-');
+            expect($stream->range('0-'))->toBe($stream);
             expect($stream->length())->toBe(6);
 
         });
@@ -1230,6 +1302,34 @@ describe("Stream", function() {
                 'mime' => true
             ]);
             expect($stream->mime())->toBe('audio/x-wav');
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->charset()", function() {
+
+        it("get/sets the charset", function() {
+            $stream = new Stream(['data' => 'foo bar']);
+            expect($stream->charset())->toBe(null);
+
+            expect($stream->charset('iso-8859-1'))->toBe($stream);
+            expect($stream->charset())->toBe('iso-8859-1');
+            $stream->close();
+
+        });
+
+    });
+
+    describe("->encoding()", function() {
+
+        it("get/sets the encoding", function() {
+            $stream = new Stream(['data' => 'foo bar']);
+            expect($stream->encoding())->toBe(false);
+
+            expect($stream->encoding('base64'))->toBe($stream);
+            expect($stream->encoding())->toBe('base64');
             $stream->close();
 
         });

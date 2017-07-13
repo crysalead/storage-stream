@@ -268,6 +268,16 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
+     * Return the number of contained streams.
+     *
+     * @return integer
+     */
+    public function count()
+    {
+        return count($this->_streams);
+    }
+
+    /**
      * Checks for EOF.
      *
      * @return boolean

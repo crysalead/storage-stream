@@ -6,8 +6,6 @@ use InvalidArgumentException;
 
 class MultipartStream extends MultiStream
 {
-    use Psr7\StreamTrait;
-
     /**
      * The multipart boundary value
      *
@@ -32,13 +30,18 @@ class MultipartStream extends MultiStream
     }
 
     /**
-     * Get the boundary
+     * Get/set the boundary
      *
+     * @param  string $boundary The boundary
      * @return string
      */
-    public function boundary()
+    public function boundary($boundary = null)
     {
-        return $this->_boundary;
+        if (!func_num_args()) {
+            return $this->_boundary;
+        }
+        $this->_boundary = $boundary;
+        return $this;
     }
 
     /**
@@ -72,7 +75,7 @@ class MultipartStream extends MultiStream
             'location'    => null,
             'language'    => null,
             'length'      => false,
-            'disposition' => null, // 'form-data' or for emails 'attachement' or 'inline' can be usefull
+            'disposition' => null,
             'mime'        => true,
             'encoding'    => null,
             'charset'     => null,
@@ -81,9 +84,28 @@ class MultipartStream extends MultiStream
 
         $options += $defaults;
 
+        $encoding = $options['encoding'];
+        $mime = $options['mime'];
+        $charset = $options['charset'];
+
+        foreach (['mime', 'charset', 'encoding'] as $name) {
+            unset($options[$name]);
+        }
+
         if (!$stream instanceof Stream) {
-            $stream = new Stream(['data' => $stream, 'options' => $options]);
+            $stream = new Stream([
+                'data'     => $stream,
+                'mime'     => $mime,
+                'charset'  => $charset,
+                'encoding' => $encoding,
+                'options'  => $options
+            ]);
         } else {
+            foreach (['mime', 'charset', 'encoding'] as $name) {
+                if (!empty(${$name})) {
+                    $stream->{$name}(${$name});
+                }
+            }
             $stream->options($options);
         }
 
@@ -131,27 +153,23 @@ class MultipartStream extends MultiStream
         $buffer = '';
         foreach ($this->_streams as $stream) {
             $buffer .= '--' . $this->boundary() . "\r\n";
-            $content = '';
-            while (!$stream->eof()) {
-                $content .= $stream->read($this->_bufferSize);
-            }
+
+            $mime = $stream->mime();
+            $charset = $stream->charset();
             $options = $stream->options();
 
-            if (!empty($options['mime'])) {
-                $options['mime'] = Stream::getMime($stream, $options['mime']);
-                if (empty($options['charset']) && preg_match('~^text/~', $options['mime'])) {
-                    $options['charset'] = 'utf-8';
-                }
+            if ($mime && !$charset && preg_match('~^text/~', $mime)) {
+                $charset = 'utf-8';
             }
 
-            if (empty($options['encoding']) && !empty($options['mime'])) {
-                $options['encoding'] = preg_match('~^text/~', $options['mime']) ? 'quoted-printable' : 'base64';
+            if ($mime && !$stream->encoding()) {
+                $stream->encoding(preg_match('~^text/~', $mime) ? 'quoted-printable' : 'base64');
             }
 
-            $encoded = !empty($options['encoding']) ? static::encode($content, $options['encoding']) : $content;
-            $headers = $this->_headers($options, strlen($encoded));
+            $content = (string) $stream;
+            $headers = $this->_headers($options, $mime, $charset, $stream->encoding(), strlen($content));
             $buffer .= join("\r\n", $headers) . "\r\n\r\n";
-            $buffer .= $encoded . "\r\n";
+            $buffer .= $content . "\r\n";
         }
         return $buffer . '--' . $this->boundary() . "--\r\n";
     }
@@ -163,7 +181,7 @@ class MultipartStream extends MultiStream
      * @param  string $length  The length of the encoded stream.
      * @return array
      */
-    protected function _headers($options, $length)
+    protected function _headers($options, $mime, $charset, $encoding, $length)
     {
         $headers = !empty($options['headers']) ? $options['headers'] : [];
 
@@ -179,13 +197,13 @@ class MultipartStream extends MultiStream
             $headers[] = 'Content-ID: ' . $options['id'];
         }
 
-        if (!empty($options['mime'])) {
-            $charset = !empty($options['charset']) ? '; charset=' . $options['charset'] : '';
-            $headers[] = 'Content-Type: ' . $options['mime'] . $charset;
+        if (!empty($mime)) {
+            $charset = $charset ? '; charset=' . $charset : '';
+            $headers[] = 'Content-Type: ' . $mime . $charset;
         }
 
-        if (!empty($options['encoding'])) {
-            $headers[] = 'Content-Transfer-Encoding: ' . $options['encoding'];
+        if (!empty($encoding)) {
+            $headers[] = 'Content-Transfer-Encoding: ' . $encoding;
         }
 
         if (!empty($options['length'])) {
@@ -204,34 +222,5 @@ class MultipartStream extends MultiStream
             $headers[] = 'Content-Language: ' . $options['language'];
         }
         return $headers;
-    }
-
-    /**
-     * Encoding method
-     *
-     * @param  string $body     The message to encode.
-     * @param  string $encoding The encoding.
-     * @return string
-     */
-    public static function encode($body, $encoding)
-    {
-        switch ($encoding) {
-            case 'quoted-printable':
-                $body = quoted_printable_encode($body);
-                break;
-            case 'base64':
-                $body = rtrim(chunk_split(base64_encode($body), 76, "\r\n"));
-                break;
-            case '7bit':
-                $body = preg_replace('~[\x80-\xFF]+~', '', $body);
-            case '8bit':
-                $body = str_replace(["\x00", "\r"], '', $body);
-                $body = str_replace("\n", "\r\n", $body);
-                break;
-            default:
-                throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");
-                break;
-        }
-        return $body;
     }
 }

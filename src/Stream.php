@@ -37,6 +37,20 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected $_mime = null;
 
     /**
+     * The charset info.
+     *
+     * @var string
+     */
+    protected $_charset = null;
+
+    /**
+     * The encoding
+     *
+     * @var string
+     */
+    protected $_encoding = null;
+
+    /**
      * The buffer size.
      *
      * @var integer
@@ -95,6 +109,8 @@ class Stream implements \Psr\Http\Message\StreamInterface
             'filename'   => null,
             'mode'       => 'r+',
             'mime'       => null,
+            'charset'    => null,
+            'encoding'   => false,
             'start'      => 0,
             'limit'      => null,
             'length'     => null,
@@ -113,6 +129,8 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $this->_limit = $config['limit'];
         $this->_length = $config['length'];
         $this->_mime = static::getMime($this, $config['mime']);
+        $this->_charset = $config['charset'];
+        $this->_encoding = $config['encoding'];
         $this->_options = $config['options'];
 
         if ($this->_start > 0) {
@@ -172,7 +190,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function start($start = null, $autoseek = true)
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_start;
         }
         $this->_start = (int) $start;
@@ -180,8 +198,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if ($autoseek) {
             $this->rewind();
         }
-
-        return $this->_start;
+        return $this;
     }
 
     /**
@@ -192,10 +209,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function limit($limit = null)
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_limit;
         }
-        return $this->_limit = (int) $limit;
+        $this->_limit = (int) $limit;
+        return $this;
     }
 
     /**
@@ -228,12 +246,13 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function range($range = null)
     {
-        if (func_num_args() === 1) {
-            $values = explode('-', $range);
-            $this->_start = (integer) $values[0];
-            $this->_limit = $values[1] !== '' ? $values[1] - $values[0] : null;
+        if (!func_num_args()) {
+            return $this->_start . '-' . ($this->_limit ? $this->_start + $this->_limit : '');
         }
-        return $this->_start . '-' . ($this->_limit ? $this->_start + $this->_limit : '');
+        $values = explode('-', $range);
+        $this->_start = (integer) $values[0];
+        $this->_limit = $values[1] !== '' ? $values[1] - $values[0] : null;
+        return $this;
     }
 
     /**
@@ -244,10 +263,40 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function mime($mime = null)
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_mime;
         }
         return $this->_mime = static::getMime($this, $mime);
+    }
+
+    /**
+     * Get/set the charset.
+     *
+     * @param  string $charset
+     * @return string           The charset.
+     */
+    public function charset($charset = null)
+    {
+        if (!func_num_args()) {
+            return $this->_charset;
+        }
+        $this->_charset = $charset;
+        return $this;
+    }
+
+    /**
+     * Get/set the encoding.
+     *
+     * @param  string $encoding
+     * @return string           The encoding.
+     */
+    public function encoding($encoding = null)
+    {
+        if (!func_num_args()) {
+            return $this->_encoding;
+        }
+        $this->_encoding = $encoding;
+        return $this;
     }
 
     /**
@@ -258,10 +307,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function options($options = [])
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_options;
         }
-        return $this->_options = $options ?: [];
+        $this->_options = $options ?: [];
+        return $this;
     }
 
     /**
@@ -319,9 +369,14 @@ class Stream implements \Psr\Http\Message\StreamInterface
 
     /**
      * Throw an exception if a stream is not readable.
+     *
+     * @param boolean $bytePerByte Check if the stream is readable byte per byte.
      */
-    protected function _ensureReadable()
+    protected function _ensureReadable($bytePerByte = true)
     {
+        if ($bytePerByte && $this->_encoding) {
+            throw new RuntimeException('Stream with encoding cannot be read byte per byte.');
+        }
         if (!$this->valid()) {
             throw new RuntimeException('Cannot read from a closed stream.');
         }
@@ -400,7 +455,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return string          The data.
      */
-    public function read($length = null)
+    public function read($length = null, $encoding = true)
     {
         $this->_ensureReadable();
         $length = $this->_bufferSize($length);
@@ -408,7 +463,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return '';
         }
         $result = fread($this->_resource, $length);
-        return $result === false ? '' : $result;
+
+        if ($result === false) {
+            return '';
+        }
+        return $encoding && $this->_encoding ? static::encode($result, $this->_encoding) : $result;
     }
 
     /**
@@ -521,12 +580,14 @@ class Stream implements \Psr\Http\Message\StreamInterface
     /**
      * Return the remaining data from the stream.
      *
+     * @param  string $encode Indicate if the returned data must ben encoded or not
      * @return string
      */
-    public function flush()
+    public function flush($encode = true)
     {
-        $this->_ensureReadable();
-        return stream_get_contents($this->_resource);
+        $this->_ensureReadable(false);
+        $content = stream_get_contents($this->_resource);
+        return $encode && $this->_encoding ? static::encode($content, $this->_encoding) : $content;
     }
 
     /**
@@ -720,11 +781,11 @@ class Stream implements \Psr\Http\Message\StreamInterface
         }
 
         $stream->seek($size, SEEK_SET);
-        $signature = $stream->read($size);
+        $signature = $stream->read($size, false);
 
         $size = min($end - 0, 1024);
         $stream->rewind();
-        $signature = $stream->read($size) . $signature;
+        $signature = $stream->read($size, false) . $signature;
         $stream->seek($old, SEEK_SET);
 
         return finfo_buffer($finfo, $signature);
@@ -746,5 +807,39 @@ class Stream implements \Psr\Http\Message\StreamInterface
         fwrite($resource, (string) $this);
         rewind($resource);
         $this->_resource = $resource;
+    }
+
+    /**
+     * Encoding method
+     *
+     * @param  string $body     The message to encode.
+     * @param  string $encoding The encoding.
+     * @return string
+     */
+    public static function encode($body, $encoding, $le = "\r\n")
+    {
+        switch ($encoding) {
+            case 'quoted-printable':
+                $body = quoted_printable_encode($body);
+                break;
+            case 'base64':
+                $body = rtrim(chunk_split(base64_encode($body), 76, $le));
+                break;
+            case '7bit':
+                $body = preg_replace('~[\x80-\xFF]+~', '', $body);
+            case '8bit':
+                $body = str_replace(["\x00", "\r"], '', $body);
+                $body = str_replace("\n", "\r\n", $body);
+                if (preg_match('~^(.{' . 1000 . ',})~m', $body)) {
+                    throw new RuntimeException("A line with more that 1000 characters has been detected, cannot use `'{$encoding}'` encoding.");
+                }
+                break;
+            case 'binary':
+                break;
+            default:
+                throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");
+                break;
+        }
+        return $body;
     }
 }
