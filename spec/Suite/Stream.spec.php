@@ -734,7 +734,7 @@ describe("Stream", function() {
 
         });
 
-        it("flushes 8bit encoded data", function() {
+        it("flushes quoted-printable encoded data", function() {
 
             $stream = new Stream(['data' => 'Я', 'encoding' => 'quoted-printable']);
             expect($stream->flush())->toBe('=D0=AF');
@@ -746,6 +746,23 @@ describe("Stream", function() {
 
             $stream = new Stream(['data' => 'bar', 'encoding' => 'base64']);
             expect($stream->flush())->toBe('YmFy');
+            $stream->close();
+
+        });
+
+        it("flushes gzinflate encoded data", function() {
+
+            $data = gzdeflate('bar');
+            $stream = new Stream(['data' => $data, 'encoding' => 'gzinflate']);
+            expect($stream->flush())->toBe('bar');
+            $stream->close();
+
+        });
+
+        it("flushes gzdeflate encoded data", function() {
+
+            $stream = new Stream(['data' => 'bar', 'encoding' => 'gzdeflate']);
+            expect($stream->flush())->toBe(gzdeflate('bar'));
             $stream->close();
 
         });

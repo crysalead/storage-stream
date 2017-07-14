@@ -834,6 +834,12 @@ class Stream implements \Psr\Http\Message\StreamInterface
                 break;
             case 'binary':
                 break;
+            case 'gzdeflate':
+                $body = gzdeflate($body);
+                break;
+            case 'gzinflate':
+                $body = gzinflate($body);
+                break;
             default:
                 throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");
                 break;
