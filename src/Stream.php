@@ -123,15 +123,15 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $config += $defaults;
 
         $this->_initResource($config);
-
-        $this->_bufferSize = $config['bufferSize'];
-        $this->_start = $config['start'];
-        $this->_limit = $config['limit'];
         $this->_length = $config['length'];
-        $this->_mime = static::getMime($this, $config['mime']);
-        $this->_charset = $config['charset'];
-        $this->_encoding = $config['encoding'];
-        $this->_options = $config['options'];
+
+        $this->bufferSize($config['bufferSize']);
+        $this->start($config['start'], false);
+        $this->limit($config['limit']);
+        $this->mime($config['mime']);
+        $this->charset($config['charset']);
+        $this->encoding($config['encoding']);
+        $this->options($config['options']);
 
         if ($this->_start > 0) {
             if(!$this->isSeekable()) {
@@ -186,7 +186,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      * Get/set the starting offset.
      *
      * @param  integer $start The offset to set.
-     * @return string         The setted offset.
+     * @return integer        The setted offset.
      */
     public function start($start = null, $autoseek = true)
     {
@@ -204,15 +204,15 @@ class Stream implements \Psr\Http\Message\StreamInterface
     /**
      * Get/set the stream range limit.
      *
-     * @param  integer $limit The limit to set.
-     * @return string          The setted limit.
+     * @param  integer      $limit The limit to set.
+     * @return integer|null        The setted limit.
      */
     public function limit($limit = null)
     {
         if (!func_num_args()) {
             return $this->_limit;
         }
-        $this->_limit = (int) $limit;
+        $this->_limit = $limit;
         return $this;
     }
 
@@ -250,7 +250,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return $this->_start . '-' . ($this->_limit ? $this->_start + $this->_limit : '');
         }
         $values = explode('-', $range);
-        $this->_start = (integer) $values[0];
+        $this->_start = (int) $values[0];
         $this->_limit = $values[1] !== '' ? $values[1] - $values[0] : null;
         return $this;
     }
@@ -442,7 +442,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function bufferSize($bufferSize = null)
     {
-        if ($bufferSize === null) {
+        if (!func_num_args($bufferSize)) {
             return $this->_bufferSize;
         }
         return $this->_bufferSize = $bufferSize;
@@ -455,7 +455,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return string          The data.
      */
-    public function read($length = null, $encoding = true)
+    public function read($length = null)
     {
         $this->_ensureReadable();
         $length = $this->_bufferSize($length);
@@ -463,11 +463,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return '';
         }
         $result = fread($this->_resource, $length);
-
-        if ($result === false) {
-            return '';
-        }
-        return $encoding && $this->_encoding ? static::encode($result, $this->_encoding) : $result;
+        return $result === false ? '' : $result;
     }
 
     /**
@@ -810,7 +806,9 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Encoding method
+     * Encoding method.
+     *
+     * Note: Not relying on `stream_filter_append()` since not stable.
      *
      * @param  string $body     The message to encode.
      * @param  string $encoding The encoding.

@@ -57,6 +57,9 @@ describe("MultipartStream", function() {
             ]);
 
             $expected = <<<EOD
+Content-Type: multipart/mixed;\r
+\tboundary="boundary"\r
+\r
 --boundary\r
 Content-Disposition: inline; name="foo"\r
 Content-Type: image/png\r
@@ -84,6 +87,9 @@ EOD;
             ]);
 
             $expected = <<<EOD
+Content-Type: multipart/mixed;\r
+\tboundary="boundary"\r
+\r
 --boundary\r
 x-foo: "bar"\r
 Content-Disposition: form-data; name="foo"\r
@@ -106,6 +112,9 @@ EOD;
             $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'disposition' => 'attachment']);
 
             $expected = <<<EOD
+Content-Type: multipart/mixed;\r
+\tboundary="boundary"\r
+\r
 --boundary\r
 Content-Disposition: attachment; name="foo"\r
 Content-Type: text/plain; charset=utf-8\r
@@ -152,6 +161,9 @@ EOD;
             ]);
 
             $expected = <<<EOD
+Content-Type: multipart/mixed;\r
+\tboundary="boundary"\r
+\r
 --boundary\r
 Content-Disposition: form-data; name="foo"\r
 Content-Type: text/plain; charset=utf-8\r
@@ -182,6 +194,9 @@ EOD;
             $multipartStream->add(new Stream(['data' => 1.1]), ['name' => 'float','disposition' => 'form-data']);
 
             $expected = <<<EOD
+Content-Type: multipart/mixed;\r
+\tboundary="boundary"\r
+\r
 --boundary\r
 Content-Disposition: form-data; name="int"\r
 Content-Type: application/octet-stream\r
@@ -274,7 +289,7 @@ EOD;
         it("returns an empty string when empty", function() {
 
             $multipartStream = new MultipartStream();
-            expect($multipartStream->toString())->toBe('--' . $multipartStream->boundary() . "--\r\n");
+            expect($multipartStream->toString())->toBe("Content-Type: multipart/mixed;\r\n\tboundary=\"" . $multipartStream->boundary() . "\"\r\n\r\n--" . $multipartStream->boundary() . "--\r\n");
 
             $multipartStream->close();
 

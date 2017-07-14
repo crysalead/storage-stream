@@ -11,6 +11,13 @@ class MultipartStream extends MultiStream
      *
      * @var string
      */
+    protected $_mime = null;
+
+    /**
+     * The multipart boundary value
+     *
+     * @var string
+     */
     protected $_boundary = null;
 
     /**
@@ -22,10 +29,13 @@ class MultipartStream extends MultiStream
     public function __construct($config = [])
     {
         $defaults = [
+            'mime'     => 'multipart/form-data',
             'boundary' => null
         ];
         $config += $defaults;
-        $this->_boundary = isset($config['boundary']) ? $config['boundary'] : sha1(uniqid('', true));
+
+        $this->mime($config['mime']);
+        $this->boundary(isset($config['boundary']) ? $config['boundary'] : sha1(uniqid('', true)));
         parent::__construct($config);
     }
 
@@ -52,10 +62,10 @@ class MultipartStream extends MultiStream
      */
     public function mime($mime = null)
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_mime;
         }
-        return $this->_mime = $mime ?: 'multipart/mixed';
+        return $this->_mime = $mime;
     }
 
     /**
@@ -150,9 +160,14 @@ class MultipartStream extends MultiStream
      */
     public function flush()
     {
-        $buffer = '';
+        $boundary = $this->boundary();
+        $buffer = "Content-Type: multipart/mixed;\r\n\tboundary=\"{$boundary}\"\r\n\r\n";
         foreach ($this->_streams as $stream) {
-            $buffer .= '--' . $this->boundary() . "\r\n";
+            if ($stream instanceof static) {
+                $buffer .= $stream->toString();
+                continue;
+            }
+            $buffer .= '--' . $boundary . "\r\n";
 
             $mime = $stream->mime();
             $charset = $stream->charset();
