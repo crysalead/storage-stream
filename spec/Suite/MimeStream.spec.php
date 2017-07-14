@@ -4,29 +4,29 @@ namespace Lead\Storage\Stream\Spec\Suite;
 use RuntimeException;
 use InvalidArgumentException;
 use Lead\Storage\Stream\Stream;
-use Lead\Storage\Stream\MultipartStream;
+use Lead\Storage\Stream\MimeStream;
 
-describe("MultipartStream", function() {
+describe("MimeStream", function() {
 
     describe("->__construct()", function() {
 
         it("asserts the stream is not writable", function() {
 
-            $multipartStream = new MultipartStream();
-            expect($multipartStream->isWritable())->toBe(false);
-            expect($multipartStream->isSeekable())->toBe(true);
-            expect($multipartStream->isReadable())->toBe(true);
-            expect($multipartStream->boundary())->not->toBeEmpty();
+            $mimeStream = new MimeStream();
+            expect($mimeStream->isWritable())->toBe(false);
+            expect($mimeStream->isSeekable())->toBe(true);
+            expect($mimeStream->isReadable())->toBe(true);
+            expect($mimeStream->boundary())->not->toBeEmpty();
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
         it("supports custom boundary", function() {
 
-            $multipartStream = new MultipartStream(['boundary' => 'foo']);
-            expect($multipartStream->boundary())->toBe('foo');
-            $multipartStream->close();
+            $mimeStream = new MimeStream(['boundary' => 'foo']);
+            expect($mimeStream->boundary())->toBe('foo');
+            $mimeStream->close();
 
         });
 
@@ -36,10 +36,10 @@ describe("MultipartStream", function() {
 
         it("returns an empty array", function() {
 
-            $multipartStream = new MultipartStream();
-            expect($multipartStream->meta())->toBe([]);
+            $mimeStream = new MimeStream();
+            expect($mimeStream->meta())->toBe([]);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -49,8 +49,8 @@ describe("MultipartStream", function() {
 
         it("overwrites mime", function() {
 
-            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
-            $multipartStream->add(new Stream(['data' => 'bar']), [
+            $mimeStream = new MimeStream(['boundary' => 'boundary']);
+            $mimeStream->add(new Stream(['data' => 'bar']), [
                 'name'        => 'foo',
                 'disposition' => 'inline',
                 'mime'        => 'image/png'
@@ -69,16 +69,16 @@ YmFy\r
 --boundary--\r
 
 EOD;
-            expect($multipartStream->toString())->toBe($expected);
+            expect($mimeStream->toString())->toBe($expected);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
         it("add custom headers", function() {
 
-            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
-            $multipartStream->add(new Stream(['data' => 'bar']), [
+            $mimeStream = new MimeStream(['boundary' => 'boundary']);
+            $mimeStream->add(new Stream(['data' => 'bar']), [
                 'name'        => 'foo',
                 'disposition' => 'form-data',
                 'headers'     => [
@@ -100,16 +100,16 @@ bar\r
 --boundary--\r
 
 EOD;
-            expect($multipartStream->toString())->toBe($expected);
+            expect($mimeStream->toString())->toBe($expected);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
         it("overwrites disposition", function() {
 
-            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
-            $multipartStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'disposition' => 'attachment']);
+            $mimeStream = new MimeStream(['boundary' => 'boundary']);
+            $mimeStream->add(new Stream(['data' => 'bar']), ['name' => 'foo', 'disposition' => 'attachment']);
 
             $expected = <<<EOD
 Content-Type: multipart/mixed;\r
@@ -124,23 +124,23 @@ bar\r
 --boundary--\r
 
 EOD;
-            expect($multipartStream->toString())->toBe($expected);
+            expect($mimeStream->toString())->toBe($expected);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
         it("throws an exception if the `'name'` option is empty", function() {
 
-            $multipartStream = new MultipartStream();
+            $mimeStream = new MimeStream();
 
-            $closure = function() use ($multipartStream) {
+            $closure = function() use ($mimeStream) {
                 $stream = new Stream();
-                $multipartStream->add($stream);
+                $mimeStream->add($stream);
             };
 
             expect($closure)->toThrow(new InvalidArgumentException("The `'name'` option is required."));
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -149,13 +149,13 @@ EOD;
     describe("->read()", function() {
 
         it("serializes fields", function() {
-            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
+            $mimeStream = new MimeStream(['boundary' => 'boundary']);
 
-            $multipartStream->add(new Stream(['data' => 'bar']), [
+            $mimeStream->add(new Stream(['data' => 'bar']), [
                 'name' => 'foo',
                 'disposition' => 'form-data'
             ]);
-            $multipartStream->add(new Stream(['data' => 'bam']), [
+            $mimeStream->add(new Stream(['data' => 'bam']), [
                 'name' => 'baz',
                 'disposition' => 'form-data'
             ]);
@@ -178,20 +178,20 @@ bam\r
 --boundary--\r
 
 EOD;
-            expect($multipartStream->toString())->toBe($expected);
+            expect($mimeStream->toString())->toBe($expected);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
         it("serializes non string fields", function() {
 
-            $multipartStream = new MultipartStream(['boundary' => 'boundary']);
+            $mimeStream = new MimeStream(['boundary' => 'boundary']);
 
-            $multipartStream->add(new Stream(['data' => 1]), ['name' => 'int','disposition' => 'form-data']);
-            $multipartStream->add(new Stream(['data' => false]), ['name' => 'bool1','disposition' => 'form-data']);
-            $multipartStream->add(new Stream(['data' => true]), ['name' => 'bool2', 'disposition' => 'form-data']);
-            $multipartStream->add(new Stream(['data' => 1.1]), ['name' => 'float','disposition' => 'form-data']);
+            $mimeStream->add(new Stream(['data' => 1]), ['name' => 'int','disposition' => 'form-data']);
+            $mimeStream->add(new Stream(['data' => false]), ['name' => 'bool1','disposition' => 'form-data']);
+            $mimeStream->add(new Stream(['data' => true]), ['name' => 'bool2', 'disposition' => 'form-data']);
+            $mimeStream->add(new Stream(['data' => 1.1]), ['name' => 'float','disposition' => 'form-data']);
 
             $expected = <<<EOD
 Content-Type: multipart/mixed;\r
@@ -225,9 +225,9 @@ Content-Transfer-Encoding: quoted-printable\r
 
 EOD;
 
-            expect($multipartStream->toString())->toBe($expected);
+            expect($mimeStream->toString())->toBe($expected);
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -237,14 +237,14 @@ EOD;
 
         it("throws an exception on read", function() {
 
-            $multipartStream = new MultipartStream();
+            $mimeStream = new MimeStream();
 
-            $closure = function() use ($multipartStream) {
-                $multipartStream->read('hello');
+            $closure = function() use ($mimeStream) {
+                $mimeStream->read('hello');
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances cannot be read byte per byte."));
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -254,14 +254,14 @@ EOD;
 
         it("throws an exception on write", function() {
 
-            $multipartStream = new MultipartStream();
+            $mimeStream = new MimeStream();
 
-            $closure = function() use ($multipartStream) {
-                $multipartStream->write('hello');
+            $closure = function() use ($mimeStream) {
+                $mimeStream->write('hello');
             };
 
             expect($closure)->toThrow(new RuntimeException("`MultiStream` instances are not writable."));
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -271,14 +271,14 @@ EOD;
 
         it("throws an exception when called", function() {
 
-            $multipartStream = new MultipartStream();
+            $mimeStream = new MimeStream();
 
-            $closure = function() use ($multipartStream) {
-                $multipartStream->length();
+            $closure = function() use ($mimeStream) {
+                $mimeStream->length();
             };
 
             expect($closure)->toThrow(new RuntimeException("Cannot extract `MultiStream` length."));
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 
@@ -288,10 +288,10 @@ EOD;
 
         it("returns an empty string when empty", function() {
 
-            $multipartStream = new MultipartStream();
-            expect($multipartStream->toString())->toBe("Content-Type: multipart/mixed;\r\n\tboundary=\"" . $multipartStream->boundary() . "\"\r\n\r\n--" . $multipartStream->boundary() . "--\r\n");
+            $mimeStream = new MimeStream();
+            expect($mimeStream->toString())->toBe("Content-Type: multipart/mixed;\r\n\tboundary=\"" . $mimeStream->boundary() . "\"\r\n\r\n--" . $mimeStream->boundary() . "--\r\n");
 
-            $multipartStream->close();
+            $mimeStream->close();
 
         });
 

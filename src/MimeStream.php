@@ -4,7 +4,7 @@ namespace Lead\Storage\Stream;
 use RuntimeException;
 use InvalidArgumentException;
 
-class MultipartStream extends MultiStream
+class MimeStream extends MultiStream
 {
     /**
      * The multipart boundary value
