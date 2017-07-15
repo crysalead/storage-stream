@@ -44,13 +44,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
     protected $_charset = null;
 
     /**
-     * The encoding
-     *
-     * @var string
-     */
-    protected $_encoding = null;
-
-    /**
      * The buffer size.
      *
      * @var integer
@@ -110,7 +103,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
             'mode'       => 'r+',
             'mime'       => null,
             'charset'    => null,
-            'encoding'   => false,
             'start'      => 0,
             'limit'      => null,
             'length'     => null,
@@ -130,7 +122,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $this->limit($config['limit']);
         $this->mime($config['mime']);
         $this->charset($config['charset']);
-        $this->encoding($config['encoding']);
         $this->options($config['options']);
 
         if ($this->_start > 0) {
@@ -285,21 +276,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Get/set the encoding.
-     *
-     * @param  string $encoding
-     * @return string           The encoding.
-     */
-    public function encoding($encoding = null)
-    {
-        if (!func_num_args()) {
-            return $this->_encoding;
-        }
-        $this->_encoding = $encoding;
-        return $this;
-    }
-
-    /**
      * Get/set end user options.
      *
      * @param  array  $options The end user options to set.
@@ -374,9 +350,6 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     protected function _ensureReadable($bytePerByte = true)
     {
-        if ($bytePerByte && $this->_encoding) {
-            throw new RuntimeException('Stream with encoding cannot be read byte per byte.');
-        }
         if (!$this->valid()) {
             throw new RuntimeException('Cannot read from a closed stream.');
         }
@@ -576,14 +549,12 @@ class Stream implements \Psr\Http\Message\StreamInterface
     /**
      * Return the remaining data from the stream.
      *
-     * @param  string $encode Indicate if the returned data must ben encoded or not
      * @return string
      */
-    public function flush($encode = true)
+    public function flush()
     {
-        $this->_ensureReadable(false);
-        $content = stream_get_contents($this->_resource);
-        return $encode && $this->_encoding ? static::encode($content, $this->_encoding) : $content;
+        $this->_ensureReadable();
+        return stream_get_contents($this->_resource);
     }
 
     /**
@@ -803,47 +774,5 @@ class Stream implements \Psr\Http\Message\StreamInterface
         fwrite($resource, (string) $this);
         rewind($resource);
         $this->_resource = $resource;
-    }
-
-    /**
-     * Encoding method.
-     *
-     * Note: Not relying on `stream_filter_append()` since not stable.
-     *
-     * @param  string $body     The message to encode.
-     * @param  string $encoding The encoding.
-     * @return string
-     */
-    public static function encode($body, $encoding, $le = "\r\n")
-    {
-        switch ($encoding) {
-            case 'quoted-printable':
-                $body = quoted_printable_encode($body);
-                break;
-            case 'base64':
-                $body = rtrim(chunk_split(base64_encode($body), 76, $le));
-                break;
-            case '7bit':
-                $body = preg_replace('~[\x80-\xFF]+~', '', $body);
-            case '8bit':
-                $body = str_replace(["\x00", "\r"], '', $body);
-                $body = str_replace("\n", "\r\n", $body);
-                if (preg_match('~^(.{' . 1000 . ',})~m', $body)) {
-                    throw new RuntimeException("A line with more that 1000 characters has been detected, cannot use `'{$encoding}'` encoding.");
-                }
-                break;
-            case 'binary':
-                break;
-            case 'gzdeflate':
-                $body = gzdeflate($body);
-                break;
-            case 'gzinflate':
-                $body = gzinflate($body);
-                break;
-            default:
-                throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");
-                break;
-        }
-        return $body;
     }
 }
