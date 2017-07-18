@@ -128,9 +128,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      */
     public function add($stream)
     {
-        if (is_scalar($stream)) {
-            $stream = new Stream(['data' => (string) $stream]);
-        } else if (is_resource($stream)) {
+        if (is_scalar($stream) || is_resource($stream)) {
             $stream = new Stream(['data' => $stream]);
         }
 

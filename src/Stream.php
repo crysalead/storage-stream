@@ -753,7 +753,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
             return $mime;
         }
         if (!$mime || !$stream->isSeekable() || !$stream->isReadable()) {
-            return 'application/octet-stream';
+            return;
         }
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
@@ -763,7 +763,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
 
         $size = min($end - 0, 4);
         if ($size === 0) {
-            return 'application/octet-stream';
+            return;
         }
 
         $stream->seek($size, SEEK_SET);

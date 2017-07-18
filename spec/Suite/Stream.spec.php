@@ -1058,7 +1058,7 @@ describe("Stream", function() {
         it("returns the default mime", function() {
 
             $stream = new Stream();
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->close();
 
         });
@@ -1066,7 +1066,7 @@ describe("Stream", function() {
         it("returns the default mime for empty data", function() {
 
             $stream = new Stream(['mime' => true]);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->close();
 
         });
@@ -1082,7 +1082,7 @@ describe("Stream", function() {
         it("returns the default mime when the stream is not readable", function() {
 
             $stream = new Stream(['data' => fopen('php://temp', 'w')]);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->close();
 
         });
@@ -1090,7 +1090,7 @@ describe("Stream", function() {
         it("returns the default mime when the stream is not seekable", function() {
 
             $stream = new Stream(['data' => fopen('php://output', 'r')]);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->close();
 
         });
@@ -1109,7 +1109,7 @@ describe("Stream", function() {
         it("lazily autodetect the mime", function() {
 
             $stream = new Stream(['data' => 'HelloWorld']);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->mime(true);
             expect($stream->mime())->toBe('text/plain');
             $stream->close();
@@ -1119,7 +1119,7 @@ describe("Stream", function() {
         it("lazily sets the mime", function() {
 
             $stream = new Stream(['data' => 'HelloWorld']);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->mime('text/plain');
             expect($stream->mime())->toBe('text/plain');
             $stream->close();
@@ -1131,7 +1131,7 @@ describe("Stream", function() {
             $stream = new Stream(['data' => 'HelloWorld', 'mime' => true]);
             expect($stream->mime())->toBe('text/plain');
             $stream->mime(null);
-            expect($stream->mime())->toBe('application/octet-stream');
+            expect($stream->mime())->toBe(null);
             $stream->close();
 
         });
