@@ -1245,7 +1245,7 @@ describe("Stream", function() {
             expect($stream->charset())->toBe(null);
 
             expect($stream->charset('iso-8859-1'))->toBe($stream);
-            expect($stream->charset())->toBe('iso-8859-1');
+            expect($stream->charset())->toBe('ISO-8859-1');
             $stream->close();
 
         });

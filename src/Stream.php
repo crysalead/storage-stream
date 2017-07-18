@@ -271,7 +271,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if (!func_num_args()) {
             return $this->_charset;
         }
-        $this->_charset = $charset;
+        $this->_charset = $charset ? strtoupper($charset) : null;
         return $this;
     }
 
@@ -708,6 +708,25 @@ class Stream implements \Psr\Http\Message\StreamInterface
         return fclose($resource);
     }
 
+
+    /**
+     * Clones the stream.
+     */
+    public function __clone()
+    {
+        if ($this->_filename !== null) {
+            $this->_resource = fopen($this->_filename, $this->_mode);
+            return;
+        }
+        if (!$this->isSeekable()) {
+            throw new RuntimeException("Cannot clone a non seekable stream.");
+        }
+        $resource = fopen('php://temp', 'r+');
+        fwrite($resource, (string) $this);
+        rewind($resource);
+        $this->_resource = $resource;
+    }
+
     /**
      * Closes the stream
      */
@@ -756,23 +775,5 @@ class Stream implements \Psr\Http\Message\StreamInterface
         $stream->seek($old, SEEK_SET);
 
         return finfo_buffer($finfo, $signature);
-    }
-
-    /**
-     * Clones the message.
-     */
-    public function __clone()
-    {
-        if ($this->_filename !== null) {
-            $this->_resource = fopen($this->_filename, $this->_mode);
-            return;
-        }
-        if (!$this->isSeekable()) {
-            throw new RuntimeException("Cannot clone a non seekable stream.");
-        }
-        $resource = fopen('php://temp', 'r+');
-        fwrite($resource, (string) $this);
-        rewind($resource);
-        $this->_resource = $resource;
     }
 }

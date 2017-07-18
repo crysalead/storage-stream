@@ -48,39 +48,7 @@ describe("MultiStream", function() {
                 $multiStream->add($stream);
             };
 
-            expect($closure)->toThrow(new InvalidArgumentException("Can't appends a non readable stream."));
-            $multiStream->close();
-
-        });
-
-        it("throws an exception for invalid fseek value", function() {
-
-            $multiStream = new MultiStream();
-
-            $closure = function() use ($multiStream) {
-                $multiStream->seek(100, SEEK_CUR);
-            };
-
-            expect($closure)->toThrow(new RuntimeException("`MultiStream` instances can only seek with SEEK_SET."));
-            $multiStream->close();
-
-        });
-
-        it("throws an exception for invalid fseek value", function() {
-
-            $multiStream = new MultiStream();
-
-            $closure = function() use ($multiStream) {
-                $stream = new Stream();
-                $multiStream->add($stream);
-
-                allow($stream)->toReceive('rewind')->andRun(function() {
-                    throw new RuntimeException();
-                });
-                $multiStream->seek(10);
-            };
-
-            expect($closure)->toThrow(new RuntimeException("Unable to seek stream 0 of the `MultiStream`."));
+            expect($closure)->toThrow(new InvalidArgumentException("Cannot append on a non readable stream."));
             $multiStream->close();
 
         });
@@ -119,15 +87,30 @@ describe("MultiStream", function() {
 
     describe("->write()", function() {
 
-        it("throws an exception on write", function() {
+        it("throws an exception when no stream exists", function() {
 
-            $multiStream = new MultiStream();
+            $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
 
             $closure = function() use ($multiStream) {
                 $multiStream->write('hello');
             };
 
-            expect($closure)->toThrow(new RuntimeException("`MultiStream` instances are not writable."));
+            expect($closure)->toThrow(new RuntimeException("The stream container is empty no write operation is possible."));
+            $multiStream->close();
+
+        });
+
+        it("throws an exception when multiple stream exists", function() {
+
+            $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
+
+            $closure = function() use ($multiStream) {
+                $multiStream->add('');
+                $multiStream->add('');
+                $multiStream->write('hello');
+            };
+
+            expect($closure)->toThrow(new RuntimeException("The stream container contain multiple stream so no write operation on the container is possible."));
             $multiStream->close();
 
         });

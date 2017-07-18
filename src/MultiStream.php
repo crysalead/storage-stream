@@ -56,10 +56,14 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function __construct($config = [])
     {
         $defaults = [
+            'data' => null,
             'bufferSize' => 4096
         ];
         $config += $defaults;
         $this->_bufferSize = $config['bufferSize'];
+        if (isset($config['data'])) {
+            $this->add($config['data']);
+        }
     }
 
     /**
@@ -100,7 +104,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      */
     public function mime($mime = null)
     {
-        throw new Exception("Can't set or get a mime to `MultiStream`.");
+        throw new Exception("Cannot set or get a mime on a multi stream container.");
     }
 
     /**
@@ -124,12 +128,12 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      */
     public function add($stream)
     {
-        if (!$stream instanceof Stream) {
-            $stream = new Stream(['data' => $stream]);
+        if (is_scalar($stream)) {
+            $stream = new Stream(['data' => (string) $stream]);
         }
 
         if (!$stream->isReadable()) {
-            throw new InvalidArgumentException("Can't appends a non readable stream.");
+            throw new InvalidArgumentException("Cannot append on a non readable stream.");
         }
 
         // The stream is only seekable if all streams are seekable
@@ -159,22 +163,14 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function seek($offset, $whence = SEEK_SET)
     {
         if (!$this->_seekable) {
-            throw new RuntimeException('`MultiStream` instances are not seekable.');
-        } elseif ($whence !== SEEK_SET) {
-            throw new RuntimeException('`MultiStream` instances can only seek with SEEK_SET.');
+            throw new RuntimeException("Cannot seek on non seekable stream.");
         }
-
         $this->_offset = $this->_current = 0;
 
         foreach ($this->_streams as $i => $stream) {
-            try {
-                $stream->rewind();
-            } catch (Exception $e) {
-                throw new RuntimeException('Unable to seek stream ' . $i . ' of the `MultiStream`.', 0, $e);
-            }
+            $stream->rewind();
         }
 
-        // Seek to the actual position by reading from each stream
         while ($this->_offset < $offset && !$this->eof()) {
             $result = $this->read(min(8096, $offset - $this->_offset));
             if ($result === '') {
@@ -200,11 +196,11 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return string          The data.
      */
-    public function read($length)
+    public function read($length = null)
     {
         $buffer = '';
         $total = count($this->_streams) - 1;
-        $remaining = $length;
+        $remaining = (integer) ($length === null ? $this->_bufferSize : $length);
         $progressToNext = false;
 
         while ($remaining > 0) {
@@ -243,7 +239,14 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      */
     public function write($string, $length = null)
     {
-        throw new RuntimeException('`MultiStream` instances are not writable.');
+        if (!count($this->_streams)) {
+            throw new RuntimeException('The stream container is empty no write operation is possible.');
+        }
+        if (count($this->_streams) !== 1) {
+            throw new RuntimeException('The stream container contain multiple stream so no write operation on the container is possible.');
+        }
+        $stream = reset($this->_streams);
+        return $stream->write($string, $length);
     }
 
     /**
@@ -333,7 +336,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
-     * Closes each attached stream.
+     * Close each streams.
      */
     public function close()
     {
@@ -345,5 +348,23 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
         }
 
         $this->_streams = [];
+    }
+
+    /**
+     * Closes each streams.
+     */
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
+     * Clones each streams.
+     */
+    public function __clone()
+    {
+        foreach ($this->_streams as $key => $value) {
+            $this->_streams[$key] = clone $value;
+        }
     }
 }
