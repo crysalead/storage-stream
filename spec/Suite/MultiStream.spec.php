@@ -55,6 +55,79 @@ describe("MultiStream", function() {
 
     });
 
+    describe("->has()", function() {
+
+        it("checks if a stream exists", function() {
+
+            $multiStream = new MultiStream();
+            $multiStream->add('Hello');
+            expect($multiStream->has(0))->toBe(true);
+            expect($multiStream->has(1))->toBe(false);
+            $multiStream->close();
+
+        });
+
+    });
+
+    describe("->get()", function() {
+
+        it("returns a specific stream", function() {
+
+            $multiStream = new MultiStream();
+            $multiStream->add('a');
+            $multiStream->add('b');
+            $multiStream->add('c');
+            expect($multiStream->get(0)->toString())->toBe('a');
+            expect($multiStream->get(1)->toString())->toBe('b');
+            expect($multiStream->get(2)->toString())->toBe('c');
+            $multiStream->close();
+
+        });
+
+        it("throws an exception when a stream index doesn't exists", function() {
+
+            $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
+
+            $closure = function() use ($multiStream) {
+                $multiStream->get(0);
+            };
+
+            expect($closure)->toThrow(new InvalidArgumentException("Unexisting stream index `0`."));
+            $multiStream->close();
+
+        });
+
+    });
+
+    describe("->remove()", function() {
+
+        it("returns a specific stream", function() {
+
+            $multiStream = new MultiStream();
+            $multiStream->add('a');
+            $multiStream->add('b');
+            $multiStream->add('c');
+            expect($multiStream->remove(1)->toString())->toBe('b');
+            expect($multiStream->toString())->toBe('ac');
+            $multiStream->close();
+
+        });
+
+        it("throws an exception when a stream index doesn't exists", function() {
+
+            $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
+
+            $closure = function() use ($multiStream) {
+                $multiStream->remove(0);
+            };
+
+            expect($closure)->toThrow(new InvalidArgumentException("Unexisting stream index `0`."));
+            $multiStream->close();
+
+        });
+
+    });
+
     describe("->read()", function() {
 
         it("can read from multiple streams", function() {
@@ -100,17 +173,20 @@ describe("MultiStream", function() {
 
         });
 
-        it("throws an exception when multiple stream exists", function() {
+    });
+
+    describe("->append()", function() {
+
+        it("appends to the last stream", function() {
 
             $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
 
-            $closure = function() use ($multiStream) {
-                $multiStream->add('');
-                $multiStream->add('');
-                $multiStream->write('hello');
-            };
+            $multiStream->add('a');
+            $multiStream->add('b');
+            $multiStream->add('c');
+            $multiStream->append('hello');
 
-            expect($closure)->toThrow(new RuntimeException("The stream container contain multiple stream so no write operation on the container is possible."));
+            expect($multiStream->toString())->toBe('abchello');
             $multiStream->close();
 
         });
@@ -135,6 +211,49 @@ describe("MultiStream", function() {
             expect($multiStream->tell())->toBe(6);
             expect($multiStream->read(3))->toBe('baz');
 
+            $multiStream->close();
+
+        });
+
+        it("seeks to the end", function() {
+
+            $multiStream = new MultiStream();
+
+            $multiStream->add(new Stream(['data' => 'foo']));
+            $multiStream->add(new Stream(['data' => 'bar']));
+            $multiStream->add(new Stream(['data' => 'baz']));
+
+            $multiStream->seek(0, SEEK_END);
+            expect($multiStream->write('z'))->toBe(1);
+            expect($multiStream->toString())->toBe('foobarbazz');
+
+            $multiStream->close();
+
+        });
+
+        it("throws an exception for invalid fseek value", function() {
+            $multiStream = new MultiStream();
+            $closure = function() use ($multiStream) {
+                $multiStream->add('');
+                $multiStream->seek(10, SEEK_END);
+            };
+            expect($closure)->toThrow(new InvalidArgumentException("This seek operation is not supported on a multi stream container."));
+            $multiStream->close();
+        });
+
+    });
+
+    describe("->end()", function() {
+
+        it("throws an exception when no stream exists", function() {
+
+            $multiStream = new MultiStream(['mime' => 'multipart/form-data']);
+
+            $closure = function() use ($multiStream) {
+                $multiStream->end();
+            };
+
+            expect($closure)->toThrow(new RuntimeException("The stream container is empty no seek operation is possible."));
             $multiStream->close();
 
         });

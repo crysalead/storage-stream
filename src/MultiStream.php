@@ -130,6 +130,8 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     {
         if (is_scalar($stream)) {
             $stream = new Stream(['data' => (string) $stream]);
+        } else if (is_resource($stream)) {
+            $stream = new Stream(['data' => $stream]);
         }
 
         if (!$stream->isReadable()) {
@@ -165,6 +167,12 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
         if (!$this->_seekable) {
             throw new RuntimeException("Cannot seek on non seekable stream.");
         }
+        if ($whence !== SEEK_SET) {
+            if (!$offset && $whence === SEEK_END) {
+                return $this->end();
+            }
+            throw new InvalidArgumentException("This seek operation is not supported on a multi stream container.");
+        }
         $this->_offset = $this->_current = 0;
 
         foreach ($this->_streams as $i => $stream) {
@@ -187,6 +195,34 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function rewind()
     {
         $this->seek(0);
+    }
+
+    /**
+     * Alias of rewind().
+     *
+     * @return Boolean
+     */
+    public function begin()
+    {
+        return $this->rewind();
+    }
+
+    /**
+     * Seek to the end of the stream.
+     *
+     * @return Boolean
+     */
+    public function end()
+    {
+        if (!$this->_seekable) {
+            throw new RuntimeException("Cannot seek on non seekable stream.");
+        }
+        if (!count($this->_streams)) {
+            throw new RuntimeException('The stream container is empty no seek operation is possible.');
+        }
+        $this->_current = count($this->_streams) - 1;
+        $stream = $this->_streams[$this->_current];
+        $stream->seek(0, SEEK_END);
     }
 
     /**
@@ -242,11 +278,22 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
         if (!count($this->_streams)) {
             throw new RuntimeException('The stream container is empty no write operation is possible.');
         }
-        if (count($this->_streams) !== 1) {
-            throw new RuntimeException('The stream container contain multiple stream so no write operation on the container is possible.');
-        }
-        $stream = reset($this->_streams);
+        $stream = $this->_streams[$this->_current];
         return $stream->write($string, $length);
+    }
+
+    /**
+     * Append data to the stream.
+     *
+     * @param  string  $string The string that is to be written.
+     * @param  integer $length If the length argument is given, writing will stop after length bytes have
+     *                         been written or the end of string if reached, whichever comes first.
+     * @return integer         Number of bytes written
+     */
+    public function append($string, $length = null)
+    {
+        $this->end();
+        return $this->write($string, $length);
     }
 
     /**
@@ -271,6 +318,48 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     }
 
     /**
+     * Check if a stream exists
+     *
+     * @param  integer $index An index.
+     * @return boolean
+     */
+    public function has($index)
+    {
+        return isset($this->_streams[$index]);
+    }
+
+    /**
+     * Return a contained stream.
+     *
+     * @param  integer $index An index.
+     * @return object
+     */
+    public function get($index)
+    {
+        if (!isset($this->_streams[$index])) {
+            throw new InvalidArgumentException("Unexisting stream index `{$index}`.");
+        }
+        return $this->_streams[$index];
+    }
+
+    /**
+     * Remove a stream.
+     *
+     * @param  integer $index An index.
+     * @return object         The removed stream.
+     */
+    public function remove($index)
+    {
+        if (!isset($this->_streams[$index])) {
+            throw new InvalidArgumentException("Unexisting stream index `{$index}`.");
+        }
+        $stream = $this->_streams[$index];
+        unset($this->_streams[$index]);
+        $this->_streams = array_values($this->_streams);
+        return $stream;
+    }
+
+    /**
      * Return the number of contained streams.
      *
      * @return integer
@@ -278,6 +367,16 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     public function count()
     {
         return count($this->_streams);
+    }
+
+    /**
+     * Check if the stream is valid.
+     *
+     * @return Boolean
+     */
+    public function valid()
+    {
+        return true;
     }
 
     /**
