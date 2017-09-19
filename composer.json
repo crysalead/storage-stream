@@ -10,6 +10,7 @@
     ],
     "require": {
         "php": ">=7",
+        "ext-fileinfo": "*",
         "psr/http-message": "~1.0"
     },
     "require-dev": {
