@@ -415,7 +415,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function bufferSize($bufferSize = null)
     {
-        if (!func_num_args($bufferSize)) {
+        if (!func_num_args()) {
             return $this->_bufferSize;
         }
         return $this->_bufferSize = $bufferSize;
