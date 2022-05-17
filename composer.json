@@ -14,7 +14,7 @@
         "psr/http-message": "~1.0"
     },
     "require-dev": {
-        "kahlan/kahlan": "~3.0",
+        "kahlan/kahlan": "~5.0",
         "crysalead/dir": "~2.0"
     },
     "autoload": {

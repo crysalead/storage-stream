@@ -1,25 +1,20 @@
-sudo: false
 language: php
 
 php:
-  - 7.0
-  - 7.1
-  - 7.2
-  - 7.3
+  - 7.4
+  - 8.1
 
 before_script:
   - if [[ $TRAVIS_SECURE_ENV_VARS = "true" ]]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
+  - echo 'xdebug.mode = coverage' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
   - composer install --no-interaction
-  - if [[ $TRAVIS_PHP_VERSION =~ ^hhvm ]]; then echo 'xdebug.enable = On' >> /etc/hhvm/php.ini; fi
-  - if [[ $TRAVIS_PHP_VERSION =~ ^hhvm ]]; then echo 'hhvm.php7.all = 1' >> /etc/hhvm/php.ini; fi
-  - if [[ $TRAVIS_PHP_VERSION =~ ^7 ]]; then git clone git://github.com/xdebug/xdebug.git && cd xdebug && phpize && ./configure --enable-xdebug  && make && make install && echo "zend_extension = xdebug.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini && cd ..; fi
 
 script: bin/kahlan --coverage=3 --clover=clover.xml --reporter=verbose
 
 after_success:
-  - "if [ $(phpenv version-name) = '7.3' ]; then wget https://scrutinizer-ci.com/ocular.phar; fi"
-  - "if [ $(phpenv version-name) = '7.3' ]; then php ocular.phar code-coverage:upload --format=php-clover 'clover.xml'; fi"
+  - "if [ $(phpenv version-name) = '7.4' ]; then wget https://scrutinizer-ci.com/ocular.phar; fi"
+  - "if [ $(phpenv version-name) = '7.4' ]; then php ocular.phar code-coverage:upload --format=php-clover 'clover.xml'; fi"
 
 env:
   global:
-    secure: b4OFZ4Ozh0NwINCUinf6kfen+w7AAd09UomxG46WeSV8IyBpkoIgdzhvzUSEAehNHbl7EkgpUbwEoTPwfDsGTunXPv8dubbF4LO9RtBuNXJIUUzZ0uv24RLGMzK3XeDqEMjh7paFc3YuIXJ7I+/TPSxIXIh1JtiKNji1DgwQTEM=
+    secure: Op3FnRNp9yDLyhUNh6Ga6fbF7rfNJlg4jvrBT5aPGuNEhEWV8FOCoXqf+/fj/xm6s39ddYwtU2oFG/0dWlOSa8he2w9vOsqKdDQ0eO+KuGEaguPLDpYTRZQT4teHM+eWl4HMkM1rYCLbBNwVAvXvjg/z0Au6rFIhhIYoVxxCvi4=

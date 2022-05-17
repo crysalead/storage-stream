@@ -1175,7 +1175,7 @@ describe("Stream", function() {
                 'data' => fopen('spec/Fixture/helloworld.txt.gz', 'r+'),
                 'mime' => true
             ]);
-            expect($stream->mime())->toBe('application/x-gzip');
+            expect($stream->mime() === 'application/x-gzip' || $stream->mime() === 'application/gzip')->toBe(true);
             $stream->close();
 
         });
