@@ -773,7 +773,8 @@ describe("Stream", function() {
             expect($stream->read())->toBe('foo bar');
             expect($stream->read())->toBe('');
 
-            expect($stream->rewind())->toBe(0);
+            $stream->rewind();
+            expect($stream->tell())->toBe(0);
             expect($stream->read())->toBe('foo bar');
             $stream->close();
 
@@ -790,7 +791,8 @@ describe("Stream", function() {
             expect($stream->read())->toBe('bar');
             expect($stream->read())->toBe('');
 
-            expect($stream->rewind())->toBe(4);
+            $stream->rewind();
+            expect($stream->tell())->toBe(4);
             expect($stream->read())->toBe('bar');
             $stream->close();
 
@@ -819,7 +821,8 @@ describe("Stream", function() {
 
             $stream = new Stream(['data' => 'foo bar baz']);
 
-            expect($stream->end())->toBe(11);
+            $stream->end();
+            expect($stream->tell())->toBe(11);
             expect($stream->read())->toBe('');
             expect($stream->eof())->toBe(true);
 
@@ -835,7 +838,8 @@ describe("Stream", function() {
                 'limit' => 3
             ]);
 
-            expect($stream->end())->toBe(7);
+            $stream->end();
+            expect($stream->tell())->toBe(7);
             expect($stream->read())->toBe('');
             expect($stream->eof())->toBe(true);
 
@@ -982,7 +986,7 @@ describe("Stream", function() {
             $stream = new Stream(['data' => $file]);
             expect($stream->detach())->toBe($file);
             expect($stream->valid())->toBe(false);
-            expect($stream->close())->toBe(true);
+            expect($stream->close())->toBe(null);
 
         });
 
@@ -993,9 +997,9 @@ describe("Stream", function() {
         it("closes the stream", function() {
 
             $stream = new Stream();
-            expect($stream->close())->toBe(true);
+            expect($stream->close())->toBe(null);
             expect($stream->valid())->toBe(false);
-            expect($stream->close())->toBe(true);
+            expect($stream->close())->toBe(null);
 
         });
 

@@ -71,7 +71,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isReadable()
+    public function isReadable(): bool
     {
         return true;
     }
@@ -81,7 +81,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isWritable()
+    public function isWritable(): bool
     {
         return false;
     }
@@ -91,7 +91,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isSeekable()
+    public function isSeekable(): bool
     {
         return $this->_seekable;
     }
@@ -150,7 +150,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return integer
      */
-    public function tell()
+    public function tell(): int
     {
         return $this->_offset;
     }
@@ -160,14 +160,15 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * {@inheritdoc}
      */
-    public function seek($offset, $whence = SEEK_SET)
+    public function seek($offset, $whence = SEEK_SET): void
     {
         if (!$this->_seekable) {
             throw new RuntimeException("Cannot seek on non seekable stream.");
         }
         if ($whence !== SEEK_SET) {
             if (!$offset && $whence === SEEK_END) {
-                return $this->end();
+                $this->end();
+                return;
             }
             throw new InvalidArgumentException("This seek operation is not supported on a multi stream container.");
         }
@@ -190,7 +191,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return Boolean
      */
-    public function rewind()
+    public function rewind(): void
     {
         $this->seek(0);
     }
@@ -202,7 +203,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      */
     public function begin()
     {
-        return $this->rewind();
+        $this->rewind();
     }
 
     /**
@@ -230,7 +231,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return string          The data.
      */
-    public function read($length = null)
+    public function read($length = null): string
     {
         $buffer = '';
         $total = count($this->_streams) - 1;
@@ -271,7 +272,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *                         been written or the end of string if reached, whichever comes first.
      * @return integer         Number of bytes written
      */
-    public function write($string, $length = null)
+    public function write($string, $length = null): int
     {
         if (!count($this->_streams)) {
             throw new RuntimeException('The stream container is empty no write operation is possible.');
@@ -382,7 +383,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function eof()
+    public function eof(): bool
     {
         return !$this->_streams || ($this->_current >= count($this->_streams) - 1 && $this->_streams[$this->_current]->eof());
     }
@@ -435,7 +436,7 @@ class MultiStream implements \Psr\Http\Message\StreamInterface
     /**
      * Close each streams.
      */
-    public function close()
+    public function close(): void
     {
         $this->_offset = $this->_current = 0;
         $this->_seekable = true;

@@ -221,9 +221,10 @@ class Stream implements \Psr\Http\Message\StreamInterface
         if ($this->isSeekable()) {
             $old = $this->tell();
 
-            $begin = $this->rewind();
-            $end = $this->end();
-
+            $this->rewind();
+            $begin = $this->tell();
+            $this->end();
+            $end = $this->tell();
             $this->seek($old);
             return $end - $begin;
         }
@@ -337,7 +338,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isReadable()
+    public function isReadable(): bool
     {
         $mode = $this->meta('mode');
         return $mode[0] === 'r' || strpos($mode, '+');
@@ -364,7 +365,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isWritable()
+    public function isWritable(): bool
     {
         $mode = $this->meta('mode');
         return $mode[0] !== 'r' || strpos($mode, '+');
@@ -389,7 +390,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function isSeekable()
+    public function isSeekable(): bool
     {
         return $this->meta('seekable');
     }
@@ -428,7 +429,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      * @param  integer $length Maximum number of bytes to read (default to buffer size).
      * @return string          The data.
      */
-    public function read($length = null)
+    public function read($length = null): string
     {
         $this->_ensureReadable();
         $length = $this->_bufferSize($length);
@@ -484,7 +485,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *                         been written or the end of string if reached, whichever comes first.
      * @return integer         Number of bytes written
      */
-    public function write($string, $length = null)
+    public function write($string, $length = null): int
     {
         $this->_ensureWritable();
         if (null === $length) {
@@ -578,7 +579,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return integer
      */
-    public function tell()
+    public function tell(): int
     {
         if ($this->_resource === null && $this->_filename) {
             $this->_resource = fopen($this->_filename, $this->_mode);
@@ -595,7 +596,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *                        - SEEK_CUR - Set position to current location plus $offset.
      *                        - SEEK_END - Set position to end-of-file plus $offset.
      */
-    public function seek($offset, $whence = SEEK_SET)
+    public function seek($offset, $whence = SEEK_SET): void
     {
         if ($this->_filename === 'php://input' && $this->eof() && !$offset && $whence === SEEK_SET) {
             $this->close();
@@ -603,7 +604,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
         }
         $this->_ensureSeekable();
         fseek($this->_resource, $offset, $whence);
-        return ftell($this->_resource);
+        ftell($this->_resource);
     }
 
     /**
@@ -611,9 +612,9 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return Boolean
      */
-    public function rewind()
+    public function rewind(): void
     {
-        return $this->seek($this->_start);
+        $this->seek($this->_start);
     }
 
     /**
@@ -623,7 +624,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      */
     public function begin()
     {
-        return $this->rewind();
+        $this->rewind();
     }
 
     /**
@@ -634,9 +635,9 @@ class Stream implements \Psr\Http\Message\StreamInterface
     public function end()
     {
         if ($this->_limit === null) {
-            return $this->seek(0, SEEK_END);
+            $this->seek(0, SEEK_END);
         } else {
-            return $this->seek($this->_start + $this->_limit);
+            $this->seek($this->_start + $this->_limit);
         }
     }
 
@@ -658,7 +659,7 @@ class Stream implements \Psr\Http\Message\StreamInterface
      *
      * @return boolean
      */
-    public function eof()
+    public function eof(): bool
     {
         $this->_ensureReadable();
         if ($this->_limit === null) {
@@ -699,13 +700,13 @@ class Stream implements \Psr\Http\Message\StreamInterface
     /**
      * Closes the stream
      */
-    public function close()
+    public function close(): void
     {
         $resource = $this->detach();
         if (!is_resource($resource)) {
-            return true;
+            return;
         }
-        return fclose($resource);
+        fclose($resource);
     }
 
 
@@ -759,7 +760,8 @@ class Stream implements \Psr\Http\Message\StreamInterface
 
         $old = $stream->tell();
         $stream->rewind();
-        $end = $stream->end();
+        $stream->end();
+        $end = $stream->tell();
 
         $size = min($end - 0, 4);
         if ($size === 0) {

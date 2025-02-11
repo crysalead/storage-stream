@@ -6,12 +6,12 @@ namespace Lead\Storage\Stream\Psr7;
  */
 trait StreamTrait
 {
-    public function getSize()
+    public function getSize(): ?int
     {
         return $this->length();
     }
 
-    public function getContents()
+    public function getContents(): string
     {
         return $this->flush();
     }
